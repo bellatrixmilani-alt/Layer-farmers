@@ -1891,122 +1891,6 @@
       </div><!-- end create-view -->
     </div><!-- end login-box -->
   </div><!-- end login-screen -->
-  <!-- Step 1: Farm Details -->
-  <div class="step-view active" id="sv-1">
-    <div class="login-field">
-      <label>Farm name</label>
-      <input type="text" id="cf-name" placeholder="e.g. Mutua Layers Farm" />
-    </div>
-    <div class="login-field">
-      <label>Location</label>
-      <input type="text" id="cf-tag" placeholder="e.g. Nakuru County" />
-    </div>
-    <div class="login-field">
-      <label>Usual price per tray (KSh)</label>
-      <input type="number" id="cf-pprice" placeholder="e.g. 430" inputmode="numeric" />
-    </div>
-    <button class="login-btn" onclick="setupStep1Next()">Next →</button>
-    <div class="login-err" id="setup1-err"></div>
-    <div class="login-switch" onclick="showSigninView()">← Back to sign in</div>
-  </div>
-
-  <!-- Step 2: Add Flock Batches -->
-  <div class="step-view" id="sv-2">
-    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;font-weight:600">
-      Add your flock batches — you can add as many as you have.
-    </div>
-    <div id="setup-batches-list" style="margin-bottom:12px"></div>
-    <div
-      style="background:var(--bg3);border-radius:var(--r);padding:14px;border:1px solid var(--border);margin-bottom:12px">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">➕ Add a batch</div>
-      <div class="login-field">
-        <label>Batch name</label>
-        <input type="text" id="nb-name" placeholder="e.g. Batch A, Main Flock" />
-      </div>
-      <div class="login-field">
-        <label>Number of birds</label>
-        <input type="number" id="nb-birds" placeholder="e.g. 500" inputmode="numeric" />
-      </div>
-      <div class="login-field">
-        <label>Arrival date (day-old)</label>
-        <input type="date" id="nb-dod" />
-      </div>
-      <div class="login-field">
-        <label>Breed (optional)</label>
-        <input type="text" id="nb-breed" placeholder="e.g. ISA Brown, Lohmann" />
-      </div>
-      <button type="button" class="login-btn"
-        style="background:var(--green3);color:var(--green);border:1.5px solid var(--green);margin-bottom:0"
-        onclick="addSetupBatch()">+ Add This Batch</button>
-      <div class="login-err" id="setup2-err"></div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="login-btn" style="background:#f0f0f0;color:var(--text2);flex:1" onclick="showStep(1)">←
-        Back</button>
-      <button class="login-btn" style="flex:2" onclick="setupStep2Next()">Next →</button>
-    </div>
-  </div>
-
-  <!-- Step 3: Account Details -->
-  <div class="step-view" id="sv-3">
-    <div class="login-field">
-      <label>Main customer name (optional)</label>
-      <input type="text" id="cf-cust" placeholder="e.g. Mama Njeri Kiosk" />
-    </div>
-    <div class="login-field">
-      <label>Your phone number</label>
-      <input type="tel" id="cf-phone" placeholder="e.g. 0722000111" inputmode="numeric" />
-    </div>
-    <div class="login-field">
-      <label>Choose a 4-digit PIN</label>
-      <input type="password" id="cf-pin" placeholder="••••" maxlength="4" inputmode="numeric" />
-    </div>
-    <div class="login-field">
-      <label>Confirm your PIN</label>
-      <input type="password" id="cf-pin2" placeholder="••••" maxlength="4" inputmode="numeric"
-        oninput="checkPinMatch()" />
-      <div id="pin-match-msg" style="font-size:12px;margin-top:5px;min-height:16px"></div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="login-btn" style="background:#f0f0f0;color:var(--text2);flex:1" onclick="showStep(2)">←
-        Back</button>
-      <button class="login-btn" style="flex:2" onclick="setupStep3Next()">Next →</button>
-    </div>
-    <div class="login-err" id="setup3-err"></div>
-  </div>
-
-  <!-- Step 4: Review & Create -->
-  <div class="step-view" id="sv-4">
-    <div
-      style="background:var(--green3);border:1.5px solid #b0d4b0;border-radius:var(--r);padding:15px;margin-bottom:14px">
-      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ Review your farm
-        details</div>
-      <div id="review-content" style="font-size:13px;color:var(--text2);line-height:2"></div>
-    </div>
-    <button class="login-btn" onclick="createFarm()">🐔 Create Farm & Sign In →</button>
-    <div class="login-err" id="create-err"></div>
-    <button type="button" class="login-btn" style="background:#f0f0f0;color:var(--text2);margin-top:8px"
-      onclick="showStep(3)">← Back</button>
-  </div>
-  </div>
-  <div class="step-view" id="sv-2">
-    <div class="login-field"><label>Main customer name</label><input type="text" id="cf-cust"
-        placeholder="e.g. Mama Njeri Kiosk" /></div>
-    <div class="login-field"><label>Usual price per tray (KSh)</label><input type="number" id="cf-pprice"
-        placeholder="e.g. 430" inputmode="numeric" /></div>
-    <div class="login-field"><label>Your phone number</label><input type="tel" id="cf-phone"
-        placeholder="e.g. 0722000111" inputmode="numeric" /></div>
-    <div class="login-field"><label>Choose a 4-digit PIN</label><input type="password" id="cf-pin" placeholder="••••"
-        maxlength="4" inputmode="numeric" /></div>
-    <button class="login-btn" onclick="createFarm()">Create farm & sign in →</button>
-    <div class="login-err" id="create-err"></div>
-    <button type="button" class="login-btn" style="background:#f0f0f0;color:var(--text2);margin-top:8px"
-      onclick="setupBack()">← Back</button>
-  </div>
-  </div>
-  </div>
-  </div>
-
   <!-- APP -->
   <div class="app" id="app" style="display:none">
     <aside class="sidebar" id="sidebar">
@@ -3293,18 +3177,6 @@
       // Land on Daily Record
       goto('today', document.querySelector('.nav-item'));
     }
-    const name = document.getElementById('cf-name').value.trim(), tag = document.getElementById('cf-tag').value.trim() || 'My farm', birds = +document.getElementById('cf-birds').value || 0, dod = document.getElementById('cf-dod').value || TODAY, cust = document.getElementById('cf-cust').value.trim(), pprice = +document.getElementById('cf-pprice').value || 430, phone = document.getElementById('cf-phone').value.trim(), pin = document.getElementById('cf-pin').value.trim();
-    if (phone.length < 4) { document.getElementById('create-err').textContent = 'Enter valid phone.'; return; }
-    if (pin.length < 4) { document.getElementById('create-err').textContent = 'PIN must be 4 digits.'; return; }
-    const farms = getFarms(); if (farms.find(f => f.phone === phone)) { document.getElementById('create-err').textContent = 'Phone already has a farm.'; return; }
-    const farm = { phone, pin, name, tagline: tag, logo: '🐔', color: '#1a6b1a', pprice, mainCust: cust, demo: false };
-    farms.push(farm); LS.set('farms', farms, false);
-    // Create initial flock batch if dod and birds provided
-    loginAs(farm);
-    if (dod && birds > 0) {
-      LS.pushArr('flockBatches', { id: getNextId(), name: 'Batch A — Main Flock', birds, dod, breed: '' });
-      renderFlockBatchTabs();
-    }
     function loginAs(f) {
       currentFarm = f; LS.set('session', { phone: f.phone, ts: Date.now() }, false);
       document.getElementById('brand-icon').textContent = f.logo || '🐔';
@@ -3605,7 +3477,6 @@
       document.getElementById('dm-trays').value = '10';
       document.getElementById('dm-price').value = '430';
     }
-    { const name = document.getElementById('dm-name').value.trim(), phone = document.getElementById('dm-phone').value.trim(), date = document.getElementById('dm-date').value, trays = +document.getElementById('dm-trays').value || 0, price = +document.getElementById('dm-price').value || 0, due = document.getElementById('dm-due').value; if (!name || !trays) { alert('Enter customer name and trays.'); return; } LS.pushArr('debtors', { _id: getNextId(), cust: name, phone, date, trays, price, amount: trays * price, owed: trays * price, due, status: 'pending', rating: 5, addedFrom: 'manual' }); closeModal('debtor-modal'); renderDebtorPage(); updateSidebarStats(); }
     function renderDebtorPage() {
       const debtors = LS.getArr('debtors'), active = debtors.filter(d => d.owed > 0), total = active.reduce((s, d) => s + (d.owed || 0), 0), overdue = active.filter(d => daysBetween(d.date, TODAY) > 14);
       document.getElementById('debt-total-2').textContent = 'KSh ' + total.toLocaleString(); document.getElementById('debt-count-2').textContent = active.length; document.getElementById('debt-overdue').textContent = overdue.length;
