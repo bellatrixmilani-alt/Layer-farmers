@@ -3354,7 +3354,7 @@
       document.getElementById('s-pay').value = val;
       document.getElementById('bank-select-wrap').className = 'bank-select-wrap' + (val === 'bank' ? ' show' : '');
       document.getElementById('credit-due-wrap').className = 'bank-select-wrap' + (val === 'credit' ? ' show' : '');
-      upgit add.dateSalePreview();
+      updateSalePreview();
     }
     function selectPay(type) {
       document.getElementById('s-pay').value = type;
