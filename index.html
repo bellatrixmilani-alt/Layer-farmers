@@ -3950,10 +3950,10 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     }
 
     function toggleLang() { setLang(getLang() === 'sw' ? 'en' : 'sw'); }
-
     function applyTranslations() {
       const sw = getLang() === 'sw';
 
+      // ── Nav items ──
       const nav = {
         'Daily Record': 'Rekodi ya Leo',
         'Who Owes Me': 'Wanaodaiwa',
@@ -3974,6 +3974,20 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         txt.textContent = ' ' + (sw ? (nav[orig] || orig) : orig);
       });
 
+      // ── Nav section labels ──
+      const navSec = {
+        'Today': 'Leo',
+        'Money': 'Pesa',
+        'Farm': 'Shamba',
+        'Setup': 'Mpangilio'
+      };
+      document.querySelectorAll('.nav-section').forEach(el => {
+        const orig = el.dataset.en || el.textContent.trim();
+        el.dataset.en = orig;
+        el.textContent = sw ? (navSec[orig] || orig) : orig;
+      });
+
+      // ── Page title (topbar) ──
       const pt = document.getElementById('page-title');
       if (pt) {
         const orig = pt.dataset.en || pt.textContent.trim();
@@ -3981,43 +3995,52 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         pt.textContent = sw ? (nav[orig] || orig) : orig;
       }
 
-      const map = {
+      // ── Login screen ──
+      const loginMap = {
         'Smart records for layer farmers': 'Rekodi bora kwa wafugaji wa kuku',
         'Phone number': 'Nambari ya simu',
         '4-digit PIN': 'PIN ya tarakimu 4',
         'Sign In →': 'Ingia →',
         'New? Create your farm →': 'Mpya? Unda shamba lako →',
+        'Demo: 0700000000 · PIN 1234': 'Demo: 0700000000 · PIN 1234',
         'Farm name': 'Jina la shamba',
         'Location': 'Mahali',
         'Usual price per tray (KSh)': 'Bei ya kawaida kwa tray (KSh)',
         'Next →': 'Endelea →',
         '← Back to sign in': '← Rudi kuingia',
+        '← Back': '← Rudi',
         'Main customer name (optional)': 'Jina la mteja mkuu (si lazima)',
         'Your phone number': 'Nambari yako ya simu',
         'Choose a 4-digit PIN': 'Chagua PIN ya tarakimu 4',
         'Confirm your PIN': 'Thibitisha PIN yako',
-        '← Back': '← Rudi',
         'Batch name': 'Jina la kundi',
         'Number of birds': 'Idadi ya ndege',
         'Arrival date (day-old)': 'Tarehe ya kuwasili',
         'Breed (optional)': 'Aina (si lazima)',
         '+ Add This Batch': '+ Ongeza Kundi Hili',
-        '🐔 Create Farm & Sign In →': '🐔 Unda Shamba & Ingia →'
+        '🐔 Create Farm & Sign In →': '🐔 Unda Shamba & Ingia →',
+        '✓ Review your farm details': '✓ Kagua maelezo ya shamba lako'
       };
       document.querySelectorAll(
         '.login-sub, .login-switch, .login-hint, .login-btn, .login-field label'
       ).forEach(el => {
         const orig = el.dataset.en || el.textContent.trim();
         el.dataset.en = orig;
-        el.textContent = sw ? (map[orig] || orig) : orig;
+        el.textContent = sw ? (loginMap[orig] || orig) : orig;
       });
 
+      // ── Placeholders ──
       const ph = {
         'e.g. 0712345678': sw ? 'mfano 0712345678' : 'e.g. 0712345678',
         'e.g. Mutua Layers Farm': sw ? 'mfano Shamba la Mutua' : 'e.g. Mutua Layers Farm',
         'e.g. Nakuru County': sw ? 'mfano Kaunti ya Nakuru' : 'e.g. Nakuru County',
         'e.g. Mama Njeri Kiosk': sw ? 'mfano Kibanda cha Mama Njeri' : 'e.g. Mama Njeri Kiosk',
-        'e.g. Batch A, Main Flock': sw ? 'mfano Kundi A, Kundi Kuu' : 'e.g. Batch A, Main Flock'
+        'e.g. Batch A, Main Flock': sw ? 'mfano Kundi A, Kundi Kuu' : 'e.g. Batch A, Main Flock',
+        'e.g. Unga Farm Care': sw ? 'mfano Unga Farm Care' : 'e.g. Unga Farm Care',
+        'e.g. Baraka Shop': sw ? 'mfano Duka la Baraka' : 'e.g. Baraka Shop',
+        'e.g. ISA Brown, Lohmann': 'e.g. ISA Brown, Lohmann',
+        'e.g. 500': 'e.g. 500',
+        'e.g. 430': 'e.g. 430'
       };
       document.querySelectorAll('input[placeholder]').forEach(el => {
         const orig = el.dataset.enph || el.placeholder;
@@ -4025,17 +4048,22 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         el.placeholder = ph[orig] !== undefined ? ph[orig] : orig;
       });
 
+      // ── Sidebar footer stats labels ──
       const sfLabels = document.querySelectorAll('.farm-stat span:first-child');
       const sfEn = ['Birds alive', 'Feed days left', 'Owed to you'];
       const sfSw = ['Ndege wazima', 'Siku za chakula', 'Wanakudai'];
       sfLabels.forEach((el, i) => {
-        el.textContent = sw ? sfSw[i] : sfEn[i];
+        if (sfEn[i]) el.textContent = sw ? sfSw[i] : sfEn[i];
       });
 
+      // ── Sign out button ──
       const lo = document.querySelector('.logout-btn');
       if (lo) lo.textContent = sw ? 'Toka' : 'Sign out';
 
-      const drMap = {
+      // ── All page card headings & labels ──
+      const allText = {
+        // Daily record
+        'Daily Record': 'Rekodi ya Leo',
         'Eggs Collected': 'Mayai Yaliyokusanywa',
         'Broken Eggs': 'Mayai Yaliyovunjika',
         'Trays Sold': 'Trei Zilizouzwa',
@@ -4047,6 +4075,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         'Tap + Record to add': 'Bonyeza + Rekodi kuongeza',
         '➕ Record a Sale': '➕ Rekodi Uuzaji',
         'Customer name': 'Jina la mteja',
+        'Date': 'Tarehe',
         'Trays (×30 eggs)': 'Trei (×30 mayai)',
         'Loose eggs': 'Mayai moja moja',
         'Price per tray (KSh)': 'Bei kwa tray (KSh)',
@@ -4054,16 +4083,106 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         'Save Sale': 'Hifadhi Uuzaji',
         'Clear': 'Futa',
         'Customers Today': 'Wateja wa Leo',
-        '📤 WhatsApp Report': '📤 Ripoti ya WhatsApp'
+        '📤 WhatsApp Report': '📤 Ripoti ya WhatsApp',
+        // Sales
+        'Sales Log': 'Rekodi ya Mauzo',
+        'Monthly Summary': 'Muhtasari wa Mwezi',
+        'View month:': 'Tazama mwezi:',
+        'All records': 'Rekodi zote',
+        'Revenue shown': 'Mapato yaliyoonyeshwa',
+        'Trays shown': 'Trei zilizoonyeshwa',
+        '⬇ Export PDF': '⬇ Toa PDF',
+        // Debtors
+        'Total owed to you': 'Jumla inayokudaiwa',
+        'Customers in debt': 'Wateja wenye deni',
+        'Overdue >14 days': 'Imechelewa zaidi ya siku 14',
+        'Debtor Details': 'Maelezo ya Wadeni',
+        '+ Add Debtor': '+ Ongeza Mdeni',
+        '⬇ PDF': '⬇ PDF',
+        'Payments Received': 'Malipo Yaliyopokelewa',
+        // Expenses
+        'Record Expense': 'Rekodi Matumizi',
+        'Amount (KSh)': 'Kiasi (KSh)',
+        'Category': 'Aina',
+        'Payment method used': 'Njia ya malipo iliyotumika',
+        'Description (optional)': 'Maelezo (si lazima)',
+        'Save Expense': 'Hifadhi Matumizi',
+        'Expenses Summary': 'Muhtasari wa Matumizi',
+        'Total this month': 'Jumla mwezi huu',
+        'Expense Log': 'Rekodi ya Matumizi',
+        // Dashboard
+        'This Month — P&L': 'Mwezi Huu — Faida/Hasara',
+        'Monthly Profit History': 'Historia ya Faida ya Kila Mwezi',
+        'Completed months only.': 'Miezi iliyokamilika pekee.',
+        '3 Rules to Stay Profitable': 'Kanuni 3 za Kukaa na Faida',
+        // Feed
+        'Record Feed Purchase': 'Rekodi Ununuzi wa Chakula',
+        'Bags purchased': 'Mifuko iliyonunuliwa',
+        'Supplier': 'Msambazaji',
+        'Feed type': 'Aina ya chakula',
+        'Price/bag (KSh)': 'Bei/mfuko (KSh)',
+        'Delivery quality': 'Ubora wa uwasilishaji',
+        'Save Purchase': 'Hifadhi Ununuzi',
+        'Current Feed Stock': 'Hisa ya Chakula Sasa',
+        'Price Trend (per bag)': 'Mwenendo wa Bei (kwa mfuko)',
+        'Feed Purchase History': 'Historia ya Ununuzi wa Chakula',
+        // Flock & Health
+        'Birds alive': 'Ndege wazima',
+        'Deaths this month': 'Vifo mwezi huu',
+        'Laying rate': 'Kiwango cha kutaga',
+        'Flock age': 'Umri wa kundi',
+        'Record a Death': 'Rekodi Kifo',
+        'Date found': 'Tarehe iliyopatikana',
+        'Number of birds': 'Idadi ya ndege',
+        'Flock age at death (weeks)': 'Umri wa kundi wakati wa kifo (wiki)',
+        'Likely cause': 'Sababu inayowezekana',
+        'Symptoms observed': 'Dalili zilizoonekana',
+        'Vet status': 'Hali ya daktari wa mifugo',
+        'Record Death(s)': 'Rekodi Kifo(Vifo)',
+        'Generate Vet Report': 'Tengeneza Ripoti ya Daktari',
+        'Monthly Mortality Chart': 'Chati ya Vifo vya Kila Mwezi',
+        'Death Log': 'Rekodi ya Vifo',
+        // Vaccination
+        'Your Flock Batches': 'Makundi Yako ya Kuku',
+        '+ Add Flock Batch': '+ Ongeza Kundi',
+        'Vaccination Schedule': 'Ratiba ya Chanjo',
+        // Suppliers
+        'Supplier Reliability Scores': 'Alama za Uaminifu wa Wasambazaji',
+        'Rate a Supplier': 'Kadiria Msambazaji',
+        'Supplier name': 'Jina la msambazaji',
+        'Amount paid (KSh)': 'Kiasi kilicholipwa (KSh)',
+        'Satisfaction rating': 'Kiwango cha kuridhika',
+        'Notes': 'Maelezo',
+        'Save Rating': 'Hifadhi Ukadiriaji',
+        'Supplier Transaction Log': 'Rekodi ya Manunuzi ya Msambazaji',
+        // Settings
+        'Farm Details': 'Maelezo ya Shamba',
+        'Farm name': 'Jina la shamba',
+        'Location / tagline': 'Mahali / kauli mbiu',
+        'Usual price per tray (KSh)': 'Bei ya kawaida kwa tray (KSh)',
+        'Save Settings': 'Hifadhi Mipangilio',
+        'Export Records': 'Hamisha Rekodi',
+        '⬇ Sales PDF': '⬇ PDF ya Mauzo',
+        '⬇ Debtors PDF': '⬇ PDF ya Wadeni',
+        '⬇ Feed Purchases PDF': '⬇ PDF ya Chakula',
+        '⬇ Expenses PDF': '⬇ PDF ya Matumizi',
+        '⬇ Mortality PDF': '⬇ PDF ya Vifo',
+        'Clear all records for this farm': 'Futa rekodi zote za shamba hili'
       };
+
       document.querySelectorAll(
-        '.metric .lbl, .metric .sub, .quick-entry-box h2, .quick-entry-box label, .quick-entry-box .btn, .sec-hd h2'
+        'h2, h3, label, .metric .lbl, .metric .sub, .btn, .tab, .lbl, ' +
+        '.card-head h2, .sec-hd h2, .quick-entry-box h2, .quick-entry-box label, ' +
+        '.quick-entry-box .btn, .rule-card-title, .rule-card p, ' +
+        '.brand-sub, .logout-btn, .cal-apply, .cal-picker label'
       ).forEach(el => {
         const orig = el.dataset.en || el.textContent.trim();
+        if (!orig) return;
         el.dataset.en = orig;
-        el.textContent = sw ? (drMap[orig] || orig) : orig;
+        el.textContent = sw ? (allText[orig] || orig) : orig;
       });
 
+      // ── Payment method buttons ──
       document.querySelectorAll('.pay-btn').forEach(el => {
         const pbMap = {
           '💵 Cash': sw ? '💵 Taslimu' : '💵 Cash',
@@ -4075,114 +4194,106 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         el.textContent = sw ? (pbMap[orig] || orig) : orig;
       });
 
+      // ── Modal headings ──
+      const modalMap = {
+        'Daily Production Record': 'Rekodi ya Uzalishaji wa Leo',
+        'Add Old Debt': 'Ongeza Deni la Zamani',
+        'Record Payment': 'Rekodi Malipo',
+        '📱 Send Reminder': '📱 Tuma Ukumbusho',
+        'Add Flock Batch': 'Ongeza Kundi la Kuku',
+        'Mark Vaccine Given': 'Weka Alama Chanjo Iliyotolewa'
+      };
+      document.querySelectorAll('.modal-head h2').forEach(el => {
+        const orig = el.dataset.en || el.textContent.trim();
+        el.dataset.en = orig;
+        el.textContent = sw ? (modalMap[orig] || orig) : orig;
+      });
+
+      // ── Modal footer buttons ──
+      document.querySelectorAll('.modal-foot .btn').forEach(el => {
+        const btnMap = {
+          'Cancel': sw ? 'Ghairi' : 'Cancel',
+          'Save Record': sw ? 'Hifadhi Rekodi' : 'Save Record',
+          'Save Debtor': sw ? 'Hifadhi Mdeni' : 'Save Debtor',
+          'Save Payment': sw ? 'Hifadhi Malipo' : 'Save Payment',
+          '📱 Open SMS App': sw ? '📱 Fungua SMS' : '📱 Open SMS App',
+          'Add Flock Batch': sw ? 'Ongeza Kundi' : 'Add Flock Batch',
+          'Save': sw ? 'Hifadhi' : 'Save'
+        };
+        const orig = el.dataset.en || el.textContent.trim();
+        el.dataset.en = orig;
+        el.textContent = sw ? (btnMap[orig] || orig) : orig;
+      });
+
+      // ── Table headers ──
+      const thMap = {
+        'Customer': 'Mteja',
+        'Trays': 'Trei',
+        'Loose': 'Huru',
+        'Amount': 'Kiasi',
+        'Payment': 'Malipo',
+        'Date': 'Tarehe',
+        'Price': 'Bei',
+        'Total': 'Jumla',
+        'Status': 'Hali',
+        'Date taken': 'Tarehe iliyochukuliwa',
+        'Amount owed': 'Kiasi kinachohitajika',
+        'Days': 'Siku',
+        'Rating': 'Ukadiriaji',
+        'Action': 'Kitendo',
+        'Category': 'Aina',
+        'Paid via': 'Kulipwa kupitia',
+        'Description': 'Maelezo',
+        'Supplier': 'Msambazaji',
+        'Type': 'Aina',
+        'Bags': 'Mifuko',
+        'Delivery': 'Uwasilishaji',
+        'Flock Batch': 'Kundi la Kuku',
+        'Age (wks)': 'Umri (wiki)',
+        'Birds': 'Ndege',
+        'Cause': 'Sababu',
+        'Vet': 'Daktari',
+        'Vaccine': 'Chanjo',
+        'Target age': 'Umri unaolengwa',
+        'Due date': 'Tarehe ya mwisho',
+        'Method': 'Njia',
+        'Given on / age': 'Ilitolewa / umri',
+        'Month': 'Mwezi',
+        'Revenue': 'Mapato',
+        'Costs': 'Gharama',
+        'Profit': 'Faida',
+        'Cash': 'Taslimu',
+        'Bank': 'Benki',
+        'Credit': 'Mkopo',
+        'Total Revenue': 'Jumla ya Mapato',
+        'Trays Sold': 'Trei Zilizouzwa',
+        'Date paid': 'Tarehe iliyolipwa',
+        'Via': 'Kupitia',
+        'Phone': 'Simu',
+        'Service / Item': 'Huduma / Bidhaa',
+        'Amount Paid': 'Kiasi Kilicholipwa',
+        'Notes': 'Maelezo',
+        'Price/bag': 'Bei/mfuko'
+      };
+      document.querySelectorAll('th').forEach(el => {
+        const orig = el.dataset.en || el.textContent.trim();
+        if (!orig) return;
+        el.dataset.en = orig;
+        el.textContent = sw ? (thMap[orig] || orig) : orig;
+      });
+
+      // ── Offline banner ──
       const ob = document.getElementById('offline-banner');
       if (ob) ob.textContent = sw
         ? '📵 Hakuna mtandao — unafanya kazi nje ya mtandao. Rekodi zote zimehifadhiwa.'
         : '📵 No internet — working offline. All records saved on this device.';
+
+      // ── Today not done reminder ──
+      const tnd = document.querySelector('#today-not-done span');
+      if (tnd) tnd.textContent = sw
+        ? 'Bado hujarekodiwa mayai ya leo. Bonyeza hapa kurekodi sasa.'
+        : "You haven't recorded today's eggs yet. Tap here to record now.";
     }
-
-    function applyLangUI() {
-      const l = getLang();
-      const loginLabel = document.getElementById('login-lang-label');
-      if (loginLabel) loginLabel.textContent = l === 'sw' ? 'Kiswahili' : 'English';
-      const topBtn = document.querySelector('.topbar .icon-btn[title="Language"]');
-      if (topBtn) topBtn.title = l === 'sw' ? 'Badilisha lugha' : 'Switch language';
-    }
-    // translate labels and buttons inside login box
-    document.querySelectorAll(
-      '.login-sub, .login-switch, .login-hint, .login-btn, .login-field label'
-    ).forEach(el => {
-      const orig = el.dataset.en || el.textContent.trim();
-      el.dataset.en = orig;
-      el.textContent = sw ? (map[orig] || orig) : orig;
-    });
-
-    // placeholders
-    const ph = {
-      'e.g. 0712345678': sw ? 'mfano 0712345678' : 'e.g. 0712345678',
-      '••••': '••••',
-      'e.g. Mutua Layers Farm': sw ? 'mfano Shamba la Mutua' : 'e.g. Mutua Layers Farm',
-      'e.g. Nakuru County': sw ? 'mfano Kaunti ya Nakuru' : 'e.g. Nakuru County',
-      'e.g. 430': 'e.g. 430',
-      'e.g. Mama Njeri Kiosk': sw ? 'mfano Kibanda cha Mama Njeri' : 'e.g. Mama Njeri Kiosk',
-      'e.g. 0722000111': 'e.g. 0722000111',
-      'e.g. Batch A, Main Flock': sw ? 'mfano Kundi A, Kundi Kuu' : 'e.g. Batch A, Main Flock',
-      'e.g. 500': 'e.g. 500',
-      'e.g. ISA Brown, Lohmann': 'e.g. ISA Brown, Lohmann'
-    };
-    document.querySelectorAll('input[placeholder]').forEach(el => {
-      const orig = el.dataset.enph || el.placeholder;
-      el.dataset.enph = orig;
-      el.placeholder = ph[orig] !== undefined ? ph[orig] : orig;
-    });
-
-    // ── Sidebar footer stats ──
-    const sfLabels = document.querySelectorAll('.farm-stat span:first-child');
-    const sfEn = ['Birds alive', 'Feed days left', 'Owed to you'];
-    const sfSw = ['Ndege wazima', 'Siku za chakula', 'Wanakudai'];
-    sfLabels.forEach((el, i) => {
-      el.textContent = sw ? sfSw[i] : sfEn[i];
-    });
-
-    // sign out button
-    const lo = document.querySelector('.logout-btn');
-    if (lo) lo.textContent = sw ? 'Toka' : 'Sign out';
-
-    // ── Daily Record page headings ──
-    const drMap = {
-      'Eggs Collected': 'Mayai Yaliyokusanywa',
-      'Broken Eggs': 'Mayai Yaliyovunjika',
-      'Trays Sold': 'Trei Zilizouzwa',
-      'Revenue': 'Mapato',
-      'Physical cash': 'Pesa taslimu',
-      'Mobile money': 'Pesa ya simu',
-      'Bank transfer': 'Uhamisho wa benki',
-      'Owed to you': 'Wanakudai',
-      'Tap + Record to add': 'Bonyeza + Rekodi kuongeza',
-      '➕ Record a Sale': '➕ Rekodi Uuzaji',
-      'Customer name': 'Jina la mteja',
-      'Trays (×30 eggs)': 'Trei (×30 mayai)',
-      'Loose eggs': 'Mayai moja moja',
-      'Price per tray (KSh)': 'Bei kwa tray (KSh)',
-      'Payment method': 'Njia ya malipo',
-      'Save Sale': 'Hifadhi Uuzaji',
-      'Clear': 'Futa',
-      'Customers Today': 'Wateja wa Leo',
-      '📤 WhatsApp Report': '📤 Ripoti ya WhatsApp'
-    };
-    document.querySelectorAll('.metric .lbl, .metric .sub, .quick-entry-box h2, .quick-entry-box label, .quick-entry-box .btn, .sec-hd h2').forEach(el => {
-      const orig = el.dataset.en || el.textContent.trim();
-      el.dataset.en = orig;
-      el.textContent = sw ? (drMap[orig] || orig) : orig;
-    });
-
-    // ── Payment method buttons ──
-    const pbMap = {
-      '💵 Cash': sw ? '💵 Taslimu' : '💵 Cash',
-      '📱 M-Pesa': '📱 M-Pesa',
-      '🏦 Bank': sw ? '🏦 Benki' : '🏦 Bank',
-      '📋 Pay Later': sw ? '📋 Lipa Baadaye' : '📋 Pay Later'
-    };
-    document.querySelectorAll('.pay-btn').forEach(el => {
-      const orig = el.dataset.en || el.textContent.trim();
-      el.dataset.en = orig;
-      el.textContent = sw ? (pbMap[orig] || orig) : orig;
-    });
-
-    // ── Offline banner ──
-    const ob = document.getElementById('offline-banner');
-    if (ob) ob.textContent = sw
-      ? '📵 Hakuna mtandao — unafanya kazi nje ya mtandao. Rekodi zote zimehifadhiwa.'
-      : '📵 No internet — working offline. All records saved on this device.';
-    const l = getLang();
-
-    // Update login globe button label
-    const loginLabel = document.getElementById('login-lang-label');
-    if (loginLabel) loginLabel.textContent = l === 'sw' ? 'Kiswahili' : 'English';
-
-    // Update topbar globe button title
-    const topBtn = document.querySelector('.topbar .icon-btn[title="Language"]');
-    if (topBtn) topBtn.title = l === 'sw' ? 'Badilisha lugha' : 'Switch language';
     // ════════════════════════════════════════
     // KEYBOARD & EVENTS
     // ════════════════════════════════════════
