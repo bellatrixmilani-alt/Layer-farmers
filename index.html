@@ -2008,56 +2008,75 @@
           <!-- Quick Sale -->
           <div class="quick-entry-box g1">
             <h2>➕ Record a Sale</h2>
-            <div class="form-group"><label>Date</label><input type="date" id="s-date" onchange="updateSalePreview()" />
+
+            <div class="alert al-blue" style="margin-bottom:14px">
+              <span class="alert-ico">ℹ</span>
+              <div>A sale records who took eggs and how they paid. Credit sales are automatically added to the Debtors
+                list.</div>
             </div>
-            <div class="form-group"><label>Customer name</label>
+
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="s-date" onchange="updateSalePreview()" />
+            </div>
+            <div class="form-group">
+              <label>Customer name</label>
               <input type="text" id="s-cust" placeholder="e.g. Mama Njeri Kiosk" list="cust-list" />
               <datalist id="cust-list"></datalist>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>Trays (×30 eggs)</label>
-                <div class="stepper"><button class="stepper-btn" onclick="stepVal('s-trays',-1)">−</button><input
-                    type="number" id="s-trays" value="10" min="0" oninput="updateSalePreview()" /><button
-                    class="stepper-btn" onclick="stepVal('s-trays',1)">+</button></div>
+              <div class="form-group">
+                <label>Trays (×30 eggs)</label>
+                <div class="stepper">
+                  <button class="stepper-btn" onclick="stepVal('s-trays',-1)">−</button>
+                  <input type="number" id="s-trays" value="10" min="0" oninput="updateSalePreview()" />
+                  <button class="stepper-btn" onclick="stepVal('s-trays',1)">+</button>
+                </div>
               </div>
-              <div class="form-group"><label>Loose eggs</label>
-                <div class="stepper"><button class="stepper-btn" onclick="stepVal('s-loose',-1)">−</button><input
-                    type="number" id="s-loose" value="0" min="0" oninput="updateSalePreview()" /><button
-                    class="stepper-btn" onclick="stepVal('s-loose',1)">+</button></div>
+              <div class="form-group">
+                <label>Extra loose eggs</label>
+                <div class="stepper">
+                  <button class="stepper-btn" onclick="stepVal('s-loose',-1)">−</button>
+                  <input type="number" id="s-loose" value="0" min="0" oninput="updateSalePreview()" />
+                  <button class="stepper-btn" onclick="stepVal('s-loose',1)">+</button>
+                </div>
               </div>
             </div>
-            <div class="form-group"><label>Price per tray (KSh)</label><input type="number" id="s-price" value="430"
-                min="0" inputmode="numeric" oninput="updateSalePreview()" /></div>
-            <div class="form-group">
-              <label>Payment method</label>
-              <div class="pay-btn-row">
-                <button type="button" class="pay-btn sel-cash" id="pb-cash" onclick="selectPay('cash')">💵
-                  Cash</button>
-                <button type="button" class="pay-btn" id="pb-mpesa" onclick="selectPay('mpesa')">📱 M-Pesa</button>
-                <button type="button" class="pay-btn" id="pb-bank" onclick="selectPay('bank')">🏦 Bank</button>
-                <button type="button" class="pay-btn" id="pb-credit" onclick="selectPay('credit')">📋 Pay
-                  Later</button>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Price per tray (KSh)</label>
+                <input type="number" id="s-price" value="430" min="0" inputmode="numeric"
+                  oninput="updateSalePreview()" />
               </div>
-              <input type="hidden" id="s-pay" value="cash" />
-              <div class="bank-select-wrap" id="bank-select-wrap">
-                <label style="font-size:11px;color:var(--text3);margin-bottom:4px">Select bank</label>
-                <select id="s-bank">
-                  <option value="Equity Bank">Equity Bank</option>
-                  <option value="KCB Bank">KCB Bank</option>
-                  <option value="Co-operative Bank">Co-operative Bank</option>
-                  <option value="Absa Bank">Absa Bank</option>
-                  <option value="NCBA Bank">NCBA Bank</option>
-                  <option value="Standard Chartered">Standard Chartered</option>
-                  <option value="Family Bank">Family Bank</option>
-                  <option value="DTB Bank">DTB Bank</option>
+              <div class="form-group">
+                <label>Payment</label>
+                <select id="s-pay-select" onchange="selectPayFromDropdown(this.value)">
+                  <option value="cash">💵 Cash</option>
+                  <option value="mpesa">📱 M-Pesa</option>
+                  <option value="bank">🏦 Bank</option>
+                  <option value="credit">📋 Pay Later</option>
                 </select>
+                <input type="hidden" id="s-pay" value="cash" />
               </div>
-              <div class="bank-select-wrap" id="credit-due-wrap">
-                <label style="font-size:11px;color:var(--amber);margin-bottom:4px">Expected payment date</label>
-                <input type="date" id="s-due" />
-                <div style="font-size:11px;color:var(--amber);margin-top:3px">This will create a debtor record
-                  automatically.</div>
-              </div>
+            </div>
+            <div class="bank-select-wrap" id="bank-select-wrap">
+              <label style="font-size:11px;color:var(--text3);margin-bottom:4px">Select bank</label>
+              <select id="s-bank">
+                <option value="Equity Bank">Equity Bank</option>
+                <option value="KCB Bank">KCB Bank</option>
+                <option value="Co-operative Bank">Co-operative Bank</option>
+                <option value="Absa Bank">Absa Bank</option>
+                <option value="NCBA Bank">NCBA Bank</option>
+                <option value="Standard Chartered">Standard Chartered</option>
+                <option value="Family Bank">Family Bank</option>
+                <option value="DTB Bank">DTB Bank</option>
+              </select>
+            </div>
+            <div class="bank-select-wrap" id="credit-due-wrap">
+              <label style="font-size:11px;color:var(--amber);margin-bottom:4px">Expected payment date</label>
+              <input type="date" id="s-due" />
+              <div style="font-size:11px;color:var(--amber);margin-top:3px">This will create a debtor record
+                automatically.</div>
             </div>
             <div style="font-size:13px;color:var(--text3);margin-bottom:12px">
               Total: <strong id="sale-total-preview" style="color:var(--green);font-size:16px">KSh 0</strong>
@@ -2068,7 +2087,6 @@
             </div>
             <div class="msg-banner" id="s-msg"></div>
           </div>
-
           <!-- Customers today -->
           <div class="card g1">
             <div class="sec-hd">
@@ -3301,6 +3319,9 @@
       document.getElementById('bank-select-wrap').className = 'bank-select-wrap' + (type === 'bank' ? ' show' : '');
       document.getElementById('credit-due-wrap').className = 'bank-select-wrap' + (type === 'credit' ? ' show' : '');
       updateSalePreview();
+    }
+    function selectPayFromDropdown(val) {
+      selectPay(val);
     }
     function getPayBadge(s) {
       if (s.pay === 'cash') return '<span class="pay-badge pay-cash">💵 Cash</span>';
