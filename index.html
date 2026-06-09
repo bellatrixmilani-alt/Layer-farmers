@@ -4040,8 +4040,71 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         'e.g. Baraka Shop': sw ? 'mfano Duka la Baraka' : 'e.g. Baraka Shop',
         'e.g. ISA Brown, Lohmann': 'e.g. ISA Brown, Lohmann',
         'e.g. 500': 'e.g. 500',
-        'e.g. 430': 'e.g. 430'
+        'e.g. 430': 'e.g. 430',
+        'e.g. Newcastle vaccine — 500 birds': sw ? 'mfano chanjo ya Newcastle — ndege 500' : 'e.g. Newcastle vaccine — 500 birds',
+        'e.g. Dr. Kamau': sw ? 'mfano Dkt. Kamau' : 'e.g. Dr. Kamau',
+        'e.g. Drooping wings, watery droppings…': sw ? 'mfano Mabawa yanayolegea, kinyesi cha maji...' : 'e.g. Drooping wings, watery droppings…',
+        'e.g. ISA Brown, Lohmann': sw ? 'mfano ISA Brown, Lohmann' : 'e.g. ISA Brown, Lohmann',
+        'e.g. Batch A — 2024 Chicks': sw ? 'mfano Kundi A — Vifaranga 2024' : 'e.g. Batch A — 2024 Chicks',
+        'Supplier name': sw ? 'Jina la msambazaji' : 'Supplier name',
+        'e.g. 57000': 'e.g. 57000',
+        'e.g. Delivered 3 days late, called twice.': sw ? 'mfano Alifikisha siku 3 baadaye, nilipigia simu mara mbili.' : 'e.g. Delivered 3 days late, called twice.',
+        'e.g. Baraka Shop': sw ? 'mfano Duka la Baraka' : 'e.g. Baraka Shop',
+        'e.g. 32': sw ? 'mfano 32' : 'e.g. 32',
       };
+      // Select options
+      const optionMap = {
+        // Feed types
+        'Layers mash': 'Uji wa kuku wa kutaga',
+        'Layers pellets': 'Vidonge vya kuku wa kutaga',
+        'Growers mash': 'Uji wa kuku wanaokua',
+        'Chick starter': 'Chakula cha vifaranga',
+        // Expense categories
+        'Vaccines & medicine': 'Chanjo na dawa',
+        'Vet consultation': 'Ushauri wa daktari wa mifugo',
+        'Transport / delivery': 'Usafirishaji / uwasilishaji',
+        'Water bill': 'Bili ya maji',
+        'Electricity bill': 'Bili ya umeme',
+        'Labour / casual worker': 'Kazi / mfanyakazi wa muda',
+        'Equipment / repair': 'Vifaa / ukarabati',
+        'Disinfectants': 'Dawa za kuua vijidudu',
+        'Other': 'Nyingine',
+        // Cause of death
+        'Unknown — needs investigation': 'Haijulikani — inahitaji uchunguzi',
+        'Breathing problems / Respiratory': 'Matatizo ya kupumua',
+        'Stomach illness / Coccidiosis': 'Ugonjwa wa tumbo / Coccidiosis',
+        'Newcastle disease': 'Ugonjwa wa Newcastle',
+        'Heat stress': 'Msongo wa joto',
+        'Injury / trauma': 'Jeraha / msongo',
+        'Egg problems (peritonitis)': 'Matatizo ya yai (peritonitis)',
+        'Contaminated feed or water': 'Chakula au maji yaliyochafuliwa',
+        // Vet status
+        'Not yet reported': 'Haijareportwa bado',
+        'Reported by phone': 'Imereportwa kwa simu',
+        'Vet examined the birds': 'Daktari alichunguza ndege',
+        'Treatment given by vet': 'Matibabu yalitolewa na daktari',
+        // Delivery quality
+        '✅ On time, full order': '✅ Kwa wakati, order kamili',
+        '⚠ Late delivery': '⚠ Uwasilishaji wa kuchelewa',
+        '⚠ On time but short bags': '⚠ Kwa wakati lakini mifuko haitoshi',
+        '❌ Did not deliver': '❌ Hajakuwasilisha',
+        // Payment methods
+        '💵 Cash': sw ? '💵 Taslimu' : '💵 Cash',
+        '📱 M-Pesa': '📱 M-Pesa',
+        // Supplier service types
+        'Layers mash / Feed bags': 'Uji wa kuku / Mifuko ya chakula',
+        'Vaccines & medicines': 'Chanjo na dawa',
+        'Day-old chicks': 'Vifaranga vya siku moja',
+        'Equipment & supplies': 'Vifaa na bidhaa',
+        'Veterinary services': 'Huduma za daktari wa mifugo',
+        '— Select —': '— Chagua —'
+      };
+      document.querySelectorAll('select option').forEach(el => {
+        const orig = el.dataset.en || el.textContent.trim();
+        if (!orig) return;
+        el.dataset.en = orig;
+        el.textContent = sw ? (optionMap[orig] || orig) : orig;
+      });
       document.querySelectorAll('input[placeholder]').forEach(el => {
         const orig = el.dataset.enph || el.placeholder;
         el.dataset.enph = orig;
@@ -4167,7 +4230,24 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         '⬇ Feed Purchases PDF': '⬇ PDF ya Chakula',
         '⬇ Expenses PDF': '⬇ PDF ya Matumizi',
         '⬇ Mortality PDF': '⬇ PDF ya Vifo',
-        'Clear all records for this farm': 'Futa rekodi zote za shamba hili'
+        'Clear all records for this farm': 'Futa rekodi zote za shamba hili',
+        'Rule 1 — Feed buffer': 'Kanuni 1 — Akiba ya Chakula',
+        'Order feeds at 15 bags remaining. Never wait until zero.': 'Agiza chakula ukiwa na mifuko 15 iliyobaki. Usisibiri hadi sifuri.',
+        'Rule 2 — Credit limit': 'Kanuni 2 — Kikomo cha Mkopo',
+        'Stop supply to anyone owing over KSh 15,000 or 14+ days overdue.': 'Acha usambazaji kwa yeyote anayedaiwa zaidi ya KSh 15,000 au amechelewa siku 14+.',
+        'Rule 3 — Pay yourself': 'Kanuni 3 — Jilipe Mwenyewe',
+        'Move 20–30% of weekly net profit to a separate savings account.': 'Hamisha 20–30% ya faida ya kila wiki kwenye akaunti tofauti ya akiba.',
+
+        // Alert messages
+        'Pay Later sales appear here automatically. Tap Record Payment to clear fully or partially.': 'Mauzo ya "Lipa Baadaye" yanaonekana hapa moja kwa moja. Bonyeza Rekodi Malipo kufuta kabisa au sehemu.',
+        'Reorder when stock hits 15 bags. Never wait until zero.': 'Agiza upya chakula ukifika mifuko 15. Usisibiri hadi sifuri.',
+        'Only for debts before you started using this app. New credit sales add to Debtors automatically.': 'Kwa madeni tu kabla hujaanza kutumia programu hii. Mauzo mapya ya mkopo yanaongezwa kwa Wadeni moja kwa moja.',
+        'Download PDFs before clearing!': 'Pakua PDF kabla ya kufuta!',
+        'A flock batch is a group of chicks that arrived on the same day. You can have multiple batches at different stages.': 'Kundi la kuku ni kikundi cha vifaranga vilivyofika siku moja. Unaweza kuwa na makundi mengi katika hatua tofauti.',
+        'Record eggs collected, loose eggs, broken eggs, and feed used today.': 'Rekodi mayai yaliyokusanywa, mayai ya huru, mayai yaliyovunjika, na chakula kilichotumika leo.',
+        'Pick the batch and the vaccine, then enter the date. The flock\'s age is worked out for you.': 'Chagua kundi na chanjo, kisha ingiza tarehe. Umri wa kundi unakokotolewa kwa ajili yako.',
+        'Download records as PDF — useful for bank loan applications and vet visits.': 'Pakua rekodi kama PDF — muhimu kwa maombi ya mkopo wa benki na ziara za daktari wa mifugo.',
+        'This will create a debtor record automatically.': 'Hii itaunda rekodi ya mdeni moja kwa moja.',
       };
 
       document.querySelectorAll(
@@ -4287,12 +4367,43 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       if (ob) ob.textContent = sw
         ? '📵 Hakuna mtandao — unafanya kazi nje ya mtandao. Rekodi zote zimehifadhiwa.'
         : '📵 No internet — working offline. All records saved on this device.';
-
+      // Zero states
+      const zeroMap = {
+        'No sales recorded yet': 'Hakuna mauzo yaliyorekodiwa bado',
+        'Record your first sale from the Daily Record page.': 'Rekodi uuzaji wako wa kwanza kutoka ukurasa wa Rekodi ya Leo.',
+        'No expenses recorded yet': 'Hakuna matumizi yaliyorekodiwa bado',
+        'No feed purchases recorded yet': 'Hakuna ununuzi wa chakula uliorekodiwa bado',
+        'No deaths recorded': 'Hakuna vifo vilivyorekodiwa',
+        'No outstanding debts': 'Hakuna madeni yanayosubiri',
+        'All customers are paid up!': 'Wateja wote wamelipa!',
+        'No supplier ratings recorded yet.': 'Hakuna ukadiriaji wa wasambazaji uliorekodiwa bado.',
+        'No completed months yet.': 'Hakuna miezi iliyokamilika bado.',
+        'No sales recorded yet.': 'Hakuna mauzo yaliyorekodiwa bado.',
+        'Record sales, feeds, and expenses to see your live P&L here.': 'Rekodi mauzo, chakula, na matumizi kuona Faida/Hasara yako hapa.',
+        'Record your first sale from the Daily Record page.': 'Rekodi uuzaji wako wa kwanza kutoka ukurasa wa Rekodi ya Leo.',
+        'Record feed purchases and supplier ratings to see scores.': 'Rekodi ununuzi wa chakula na ukadiriaji wa wasambazaji kuona alama.',
+        'No flock batches added yet. Add your first batch above.': 'Hakuna makundi ya kuku yaliyoongezwa bado. Ongeza kundi lako la kwanza hapo juu.',
+        'No mortality recorded yet.': 'Hakuna vifo vilivyorekodiwa bado.'
+      };
+      document.querySelectorAll('.zero-state strong, .zero-state p').forEach(el => {
+        const orig = el.dataset.en || el.textContent.trim();
+        if (!orig) return;
+        el.dataset.en = orig;
+        el.textContent = sw ? (zeroMap[orig] || orig) : orig;
+      });
       // ── Today not done reminder ──
       const tnd = document.querySelector('#today-not-done span');
       if (tnd) tnd.textContent = sw
         ? 'Bado hujarekodiwa mayai ya leo. Bonyeza hapa kurekodi sasa.'
         : "You haven't recorded today's eggs yet. Tap here to record now.";
+    }
+    function applyLangUI() {
+      const l = getLang();
+      const loginLabel = document.getElementById('login-lang-label');
+      if (loginLabel) loginLabel.textContent = l === 'sw' ? 'Kiswahili' : 'English';
+      const topBtn = document.querySelector('.topbar .icon-btn[title="Language"]');
+      if (topBtn) topBtn.title = l === 'sw' ? 'Badilisha lugha' : 'Switch language';
+      applyTranslations();
     }
     // ════════════════════════════════════════
     // KEYBOARD & EVENTS
