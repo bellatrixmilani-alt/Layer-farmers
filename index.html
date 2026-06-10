@@ -1774,6 +1774,10 @@
         <button class="login-btn" onclick="doLogin()">Sign In →</button>
         <div class="login-err" id="login-err"></div>
         <div class="login-switch" onclick="showCreateView()">New? Create your farm →</div>
+        <div class="login-switch" onclick="document.getElementById('login-backup-input').click()">♻ Restore from a
+          backup file</div>
+        <input type="file" id="login-backup-input" accept="application/json" style="display:none"
+          onchange="if(this.files[0]) importBackup(this.files[0])" />
         <div class="login-hint">Demo: 0700000000 · PIN 1234</div>
       </div>
 
@@ -2821,6 +2825,12 @@
               <h2>Export Records</h2>
               <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Download records as PDF — useful for
                 bank loan applications and vet visits.</div>
+              <button class="btn" style="width:100%;justify-content:flex-start" onclick="exportBackup()">💾 Download
+                full backup (.json)</button>
+              <button class="btn" style="width:100%;justify-content:flex-start"
+                onclick="document.getElementById('backup-file-input').click()">♻ Restore from backup</button>
+              <input type="file" id="backup-file-input" accept="application/json" style="display:none"
+                onchange="if(this.files[0]) importBackup(this.files[0])" />
               <div class="form-actions" style="flex-direction:column;gap:10px">
                 <button class="btn" style="width:100%;justify-content:flex-start"
                   onclick="exportTablePDF('full-sales-table','Sales')">⬇ Sales PDF</button>
@@ -3015,6 +3025,42 @@
     const BANK_COLORS = { 'Cash': '#1a6b1a', 'M-Pesa': '#005f2f', 'Equity Bank': '#1557a0', 'KCB Bank': '#c0392b', 'Co-operative Bank': '#6b21a8', 'Absa Bank': '#c2410c', 'NCBA Bank': '#b86b00', 'Family Bank': '#0f766e' };
     let currentFarm = null, _syncT = null, appReady = false;
 
+    const BACKUP_KEYS = ['sales', 'feeds', 'expenses', 'mortality', 'vaccines', 'debtors', 'payments', 'dailyRecords', 'supplierRatings', 'flockBatches', '_nid', 'feedStock'];
+
+    function exportBackup() {
+      if (!currentFarm) { alert('Sign in first.'); return; }
+      const data = {};
+      BACKUP_KEYS.forEach(k => { data[k] = LS.get(k); });
+      const backup = { app: 'KukuFarmManager', version: 1, exportedAt: new Date().toISOString(), farm: currentFarm, data };
+      const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safe = (currentFarm.name || 'farm').replace(/[^\w-]+/g, '_');
+      a.href = url;
+      a.download = 'kuku-backup-' + safe + '-' + new Date().toISOString().split('T')[0] + '.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function importBackup(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        let backup;
+        try { backup = JSON.parse(e.target.result); }
+        catch (err) { alert('Could not read this file — it may be corrupted.'); return; }
+        if (!backup || backup.app !== 'KukuFarmManager' || !backup.farm) { alert('This is not a valid Kuku Farm backup file.'); return; }
+        if (!confirm('Restore data for "' + (backup.farm.name || 'farm') + '"? This overwrites that farm\'s data on this device.')) return;
+        const farms = getFarms();
+        const idx = farms.findIndex(f => f.phone === backup.farm.phone);
+        if (idx >= 0) farms[idx] = backup.farm; else farms.push(backup.farm);
+        LS.set('farms', farms, false);
+        currentFarm = backup.farm; // so keys write to the right farm namespace
+        Object.entries(backup.data || {}).forEach(([k, v]) => { if (v != null) LS.set(k, v); });
+        alert('Backup restored. Signing you in…');
+        loginAs(backup.farm);
+      };
+      reader.readAsText(file);
+    }
     function _fk(k) { const ph = currentFarm ? currentFarm.phone : 'demo'; return 'kuku3:' + ph + ':' + k; }
     function _gk(k) { return 'kuku3:' + k; }
     const LS = {
