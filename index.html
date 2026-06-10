@@ -3216,6 +3216,9 @@
     const SW_MONTHS = ['Januari', 'Februari', 'Machi', 'Aprili', 'Mei', 'Juni', 'Julai', 'Agosti', 'Septemba', 'Oktoba', 'Novemba', 'Desemba'];
     const SW_MONTHS_SHORT = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ago', 'Sep', 'Okt', 'Nov', 'Des'];
     const SW_DAYS = ['Jumapili', 'Jumatatu', 'Jumanne', 'Jumatano', 'Alhamisi', 'Ijumaa', 'Jumamosi'];
+    const WEEKDAYS_SHORT_SW = ['Jpil', 'Jtat', 'Jnne', 'Jtan', 'Alh', 'Iju', 'Jmos'];
+    const WEEKDAYS_SHORT_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    function pillLabel(iso) { const d = new Date(iso + 'T00:00:00'); return getLang() === 'sw' ? WEEKDAYS_SHORT_SW[d.getDay()] + ' ' + d.getDate() + ' ' + SW_MONTHS_SHORT[d.getMonth()] : WEEKDAYS_SHORT_EN[d.getDay()] + ' ' + d.getDate() + ' ' + d.toLocaleDateString('en-KE', { month: 'short' }); }
     function formatDate(iso) { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); if (getLang() === 'sw') return SW_DAYS[d.getDay()] + ', ' + d.getDate() + ' ' + SW_MONTHS[d.getMonth()] + ' ' + d.getFullYear(); return d.toLocaleDateString('en-KE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
     function shortDate(iso) { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); if (getLang() === 'sw') return d.getDate() + ' ' + SW_MONTHS_SHORT[d.getMonth()]; return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short' }); }
     function addDays(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0]; }
@@ -3270,7 +3273,7 @@
       const nav = document.getElementById('date-nav'); if (!nav) return;
       const mon = isoMonday(activeISO), recs = LS.get('dailyRecords') || {}, sales = LS.getArr('sales');
       let h = '';
-      for (let i = 0; i < 7; i++) { const iso = addDays(mon, i), has = (sales.some(s => s.date === iso) || !!recs[iso]); const _d = new Date(iso + 'T00:00:00'); const _lbl = getLang() === 'sw' ? SW_DAYS[_d.getDay()].slice(0, 3) + ' ' + _d.getDate() + ' ' + SW_MONTHS_SHORT[_d.getMonth()] : _d.toLocaleDateString('en-KE', { weekday: 'short', day: 'numeric', month: 'short' }); h += '<button class="date-pill' + (iso === activeISO ? ' active' : '') + (has && iso !== activeISO ? ' has-data' : '') + '" onclick="selectDate(\'' + iso + '\')">' + _lbl + '</button>'; }
+      for (let i = 0; i < 7; i++) { const iso = addDays(mon, i), has = (sales.some(s => s.date === iso) || !!recs[iso]); h += '<button class="date-pill' + (iso === activeISO ? ' active' : '') + (has && iso !== activeISO ? ' has-data' : '') + '" onclick="selectDate(\'' + iso + '\')">' + pillLabel(iso) + '</button>'; }
       nav.innerHTML = h;
     }
     function selectDate(iso) { loadDateRecords(iso); document.getElementById('dash-date-picker').value = iso; }
@@ -3283,7 +3286,7 @@
       if (rec) { const eggs = (rec.trays * 30) + (rec.loose || 0); document.getElementById('dm-eggs').textContent = eggs.toLocaleString(); const ft = Math.floor(eggs / 30), rm = eggs % 30; document.getElementById('dm-eggs-sub').textContent = '~' + ft + (sw ? ' trei' : ' trays') + (rm ? ' + ' + rm + (sw ? ' huru' : ' loose') : ''); document.getElementById('dm-broken').textContent = rec.broken || 0; document.getElementById('dm-broken-sub').textContent = eggs > 0 ? ((rec.broken || 0) / eggs * 100).toFixed(1) + '% breakage' : '—'; document.getElementById('dm-loose-total').textContent = rec.loose || 0; } else { ['dm-eggs', 'dm-broken', 'dm-loose-total'].forEach(id => document.getElementById(id).textContent = '—'); document.getElementById('dm-eggs-sub').textContent = sw ? 'Hakuna uzalishaji — gonga ⊕' : 'No production recorded — tap ⊕'; document.getElementById('dm-broken-sub').textContent = '—'; }
       let trays = 0, rev = 0, cash = 0, mpesa = 0, bank = 0, credit = 0;
       const pm = { cash: '<span class="pay-badge pay-cash">Cash</span>', mpesa: '<span class="pay-badge pay-mpesa">M-Pesa</span>', bank: '<span class="pay-badge pay-bank" id="pb-lbl">Bank</span>', credit: '<span class="pay-badge pay-credit">Pay Later</span>' };
-      let rows = '<tr><th>Customer</th><th>Trays</th><th>Loose</th><th>Amount</th><th>Payment</th></tr>';
+      let rows = '<tr>' + (sw ? ['Mteja', 'Trei', 'Huru', 'Kiasi', 'Malipo'] : ['Customer', 'Trays', 'Loose', 'Amount', 'Payment']).map(h => '<th>' + h + '</th>').join('') + '</tr>';
       daySales.forEach(s => { const a = s.totalAmount || 0; trays += s.trays; rev += a; if (s.pay === 'cash') cash += a; else if (s.pay === 'mpesa') mpesa += a; else if (s.pay === 'bank') bank += a; else credit += a; rows += '<tr><td><strong>' + escH(s.cust) + '</strong></td><td>' + s.trays + '</td><td>' + (s.loose || 0) + '</td><td>KSh ' + a.toLocaleString() + '</td><td>' + (s.pay === 'bank' ? '<span class="pay-badge pay-bank">🏦 ' + escH(s.bankName || 'Bank') + '</span>' : (pm[s.pay] || '')) + '</td></tr>'; });
       document.getElementById('day-cust-table').innerHTML = rows;
       document.getElementById('dm-trays').textContent = trays || '—'; document.getElementById('dm-trays-sub').textContent = daySales.length ? trays + (sw ? ' trei · ' : ' trays · ') + daySales.length + (sw ? ' wateja' : ' customers') : (sw ? 'Hakuna mauzo' : 'No sales recorded');
