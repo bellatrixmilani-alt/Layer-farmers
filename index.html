@@ -2014,8 +2014,7 @@
 
             <div class="alert al-blue" style="margin-bottom:14px">
               <span class="alert-ico">ℹ</span>
-              <div>A sale records who took eggs and how they paid. Credit sales are automatically added to the Debtors
-                list.</div>
+              <div id="alert-sale-info">A sale records who took eggs and how they paid. Credit sales are automatically added to the Debtors list.</div>
             </div>
 
             <div class="form-group">
@@ -2082,7 +2081,7 @@
                 automatically.</div>
             </div>
             <div style="font-size:13px;color:var(--text3);margin-bottom:12px">
-              Total: <strong id="sale-total-preview" style="color:var(--green);font-size:16px">KSh 0</strong>
+              <span id="sale-total-label">Total: </span><strong id="sale-total-preview" style="color:var(--green);font-size:16px">KSh 0</strong>
             </div>
             <div class="form-actions">
               <button class="btn btn-primary" onclick="addSale()">Save Sale</button>
@@ -2217,8 +2216,7 @@
             </div>
           </div>
           <div class="alert al-blue"><span class="alert-ico">ℹ</span>
-            <div>"Pay Later" sales appear here automatically. Tap <strong>Record Payment</strong> to clear fully or
-              partially.</div>
+            <div id="alert-debtors-info">"Pay Later" sales appear here automatically. Tap <strong>Record Payment</strong> to clear fully or partially.</div>
           </div>
           <div class="card flush g1">
             <div class="card-head">
@@ -2476,7 +2474,7 @@
                   <div class="bar-fill bar-red" id="feed-stock-bar" style="width:0%"></div>
                 </div>
                 <div class="alert al-red" style="margin-top:10px"><span class="alert-ico">📌</span>
-                  <div>Reorder when stock hits <strong>15 bags</strong>.</div>
+                  <div id="alert-feed-reorder">Reorder when stock hits <strong>15 bags</strong>.</div>
                 </div>
               </div>
               <div class="card">
@@ -2685,9 +2683,7 @@
             <div class="sep"></div>
             <h3>📋 Record a vaccination you gave</h3>
             <div class="alert al-blue" style="margin-bottom:12px"><span class="alert-ico">ℹ</span>
-              <div>Pick the batch and the vaccine, then enter the date. The flock's age is worked out for you. The
-                app
-                uses these records to predict what's missed, overdue, or coming up.</div>
+              <div id="alert-vac-info">Pick the batch and the vaccine, then enter the date. The flock's age is worked out for you. The app uses these records to predict what's missed, overdue, or coming up.</div>
             </div>
             <div class="form-row">
               <div class="form-group"><label>Which batch did you vaccinate?</label><select id="vrec-batch"
@@ -2836,7 +2832,7 @@
               <div class="sep"></div>
               <h3>Danger Zone</h3>
               <div class="alert al-red"><span class="alert-ico">⚠</span>
-                <div>Download PDFs before clearing!</div>
+                <div id="alert-settings-danger">Download PDFs before clearing!</div>
               </div>
               <button class="btn btn-danger" onclick="confirmClearAll()">Clear all records for this farm</button>
             </div>
@@ -2858,7 +2854,7 @@
       </div>
       <div class="modal-body">
         <div class="alert al-blue" style="margin-bottom:14px"><span class="alert-ico">ℹ</span>
-          <div>Record eggs collected, loose eggs, broken eggs, and feed used today.</div>
+          <div id="alert-daily-record">Record eggs collected, loose eggs, broken eggs, and feed used today.</div>
         </div>
         <div class="form-group"><label>Date of collection</label><input type="date" id="dr-date" /></div>
         <div class="form-row">
@@ -2887,8 +2883,7 @@
       </div>
       <div class="modal-body">
         <div class="alert al-amber" style="margin-bottom:12px"><span class="alert-ico">ℹ</span>
-          <div>Only for debts before you started using this app. New credit sales add to Debtors automatically.
-          </div>
+          <div id="alert-old-debt">Only for debts before you started using this app. New credit sales add to Debtors automatically.</div>
         </div>
         <div class="form-group"><label>Customer name</label><input type="text" id="dm-name"
             placeholder="e.g. Baraka Shop" /></div>
@@ -2968,8 +2963,7 @@
       </div>
       <div class="modal-body">
         <div class="alert al-blue" style="margin-bottom:12px"><span class="alert-ico">ℹ</span>
-          <div>A flock batch is a group of chicks that arrived on the same day. You can have multiple batches at
-            different stages.</div>
+          <div id="alert-flock-batch">A flock batch is a group of chicks that arrived on the same day. You can have multiple batches at different stages.</div>
         </div>
         <div class="form-group"><label>Batch name</label><input type="text" id="fb-name"
             placeholder="e.g. Batch A — 2024 Chicks" /></div>
@@ -3031,7 +3025,7 @@
     window.addEventListener('online', checkOnline); window.addEventListener('offline', checkOnline); checkOnline();
 
     // theme
-    function applyTheme(c) { const R = document.documentElement.style; const m = (h, t, r) => { h = h.replace('#', ''); const a = h.match(/../g).map(x => parseInt(x, 16)), b = t.replace('#', '').match(/../g).map(x => parseInt(x, 16)); return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * r).toString(16).padStart(2, '0')).join(''); }; R.setProperty('--green', c); R.setProperty('--green2', m(c, '#fff', 0.16)); R.setProperty('--green3', m(c, '#fff', 0.90)); R.setProperty('--green4', m(c, '#fff', 0.30)); R.setProperty('--bg3', m(c, '#fff', 0.94)); R.setProperty('--bg', m(c, '#fff', 0.967)); R.setProperty('--border', m(c, '#fff', 0.80)); R.setProperty('--border2', m(c, '#fff', 0.62)); }
+    function applyTheme(c) { const R = document.documentElement.style; const m = (h, t, r) => { h = h.replace('#', ''); const a = h.match(/../g).map(x => parseInt(x, 16)), b = t.replace('#', '').match(/../g).map(x => parseInt(x, 16)); return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * r).toString(16).padStart(2, '0')).join(''); }; R.setProperty('--green', c); R.setProperty('--green2', m(c, '#ffffff', 0.16)); R.setProperty('--green3', m(c, '#ffffff', 0.90)); R.setProperty('--green4', m(c, '#ffffff', 0.30)); R.setProperty('--bg3', m(c, '#ffffff', 0.94)); R.setProperty('--bg', m(c, '#ffffff', 0.967)); R.setProperty('--border', m(c, '#ffffff', 0.80)); R.setProperty('--border2', m(c, '#ffffff', 0.62)); }
 
     // ════════════════════════════════════════
     // AUTH & FARM
@@ -4420,6 +4414,56 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       if (tnd) tnd.textContent = sw
         ? 'Bado hujarekodiwa mayai ya leo. Bonyeza hapa kurekodi sasa.'
         : "You haven't recorded today's eggs yet. Tap here to record now.";
+
+      // ── Alert boxes ──
+      const alertData = {
+        'alert-sale-info': {
+          en: 'A sale records who took eggs and how they paid. Credit sales are automatically added to the Debtors list.',
+          sw: 'Mauzo yanarekodi ni nani aliyechukua mayai na jinsi walivyolipa. Mauzo ya mkopo yanaongezwa moja kwa moja kwenye orodha ya Wadeni.'
+        },
+        'alert-debtors-info': {
+          en: '"Pay Later" sales appear here automatically. Tap <strong>Record Payment</strong> to clear fully or partially.',
+          sw: 'Mauzo ya "Lipa Baadaye" yanaonekana hapa moja kwa moja. Bonyeza <strong>Rekodi Malipo</strong> kufuta kabisa au sehemu.'
+        },
+        'alert-feed-reorder': {
+          en: 'Reorder when stock hits <strong>15 bags</strong>.',
+          sw: 'Agiza upya chakula ukifika <strong>mifuko 15</strong>.'
+        },
+        'alert-settings-danger': {
+          en: 'Download PDFs before clearing!',
+          sw: 'Pakua PDF kabla ya kufuta!'
+        },
+        'alert-vac-info': {
+          en: "Pick the batch and the vaccine, then enter the date. The flock's age is worked out for you. The app uses these records to predict what's missed, overdue, or coming up.",
+          sw: 'Chagua kundi na chanjo, kisha ingiza tarehe. Umri wa kundi unakokotolewa kwa ajili yako. Programu hutumia rekodi hizi kutabiri kilichokosekana, kilichochelewa, au kinachokuja.'
+        },
+        'alert-daily-record': {
+          en: 'Record eggs collected, loose eggs, broken eggs, and feed used today.',
+          sw: 'Rekodi mayai yaliyokusanywa, mayai ya huru, mayai yaliyovunjika, na chakula kilichotumika leo.'
+        },
+        'alert-old-debt': {
+          en: 'Only for debts before you started using this app. New credit sales add to Debtors automatically.',
+          sw: 'Kwa madeni tu kabla hujaanza kutumia programu hii. Mauzo mapya ya mkopo yanaongezwa kwa Wadeni moja kwa moja.'
+        },
+        'alert-flock-batch': {
+          en: 'A flock batch is a group of chicks that arrived on the same day. You can have multiple batches at different stages.',
+          sw: 'Kundi la kuku ni kikundi cha vifaranga vilivyofika siku moja. Unaweza kuwa na makundi mengi katika hatua tofauti.'
+        }
+      };
+      Object.entries(alertData).forEach(([id, t]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.dataset.en = t.en;
+        el.innerHTML = sw ? t.sw : t.en;
+      });
+
+      // ── Total: inline label ──
+      const totalLabel = document.getElementById('sale-total-label');
+      if (totalLabel) {
+        const orig = totalLabel.dataset.en || totalLabel.textContent.trim();
+        totalLabel.dataset.en = orig;
+        totalLabel.textContent = sw ? 'Jumla: ' : orig;
+      }
     }
     function applyLangUI() {
       const l = getLang();
