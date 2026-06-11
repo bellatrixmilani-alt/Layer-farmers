@@ -2523,7 +2523,6 @@
                 </div>
                 <div class="prog-row"><span id="lbl-stock-level">Stock level</span><span id="feed-stock-label">0
                     bags</span></div>
-                late') : t('Mark given');<span id="feed-stock-label">0 bags</span>
               </div>
               <div class="bar-track" style="height:10px">
                 <div class="bar-fill bar-red" id="feed-stock-bar" style="width:0%"></div>
@@ -3526,7 +3525,7 @@
       const sw = getLang() === 'sw';
       let rows = '<tr><th>' + (sw ? 'Tarehe' : 'Date') + '</th><th>' + (sw ? 'Msambazaji' : 'Supplier') + '</th><th>' + (sw ? 'Aina' : 'Type') + '</th><th>' + (sw ? 'Mifuko' : 'Bags') + '</th><th>' + (sw ? 'Bei/mfuko' : 'Price/bag') + '</th><th>' + (sw ? 'Jumla' : 'Total') + '</th><th>' + (sw ? 'Kulipwa kupitia' : 'Paid via') + '</th><th>' + (sw ? 'Uwasilishaji' : 'Delivery') + '</th></tr>';
       feeds.forEach(f => { rows += '<tr><td>' + shortDate(f.date) + '</td><td><strong>' + escH(f.supplier) + '</strong></td><td>' + escH(f.type || 'Layers mash') + '</td><td>' + f.bags + '</td><td>' + f.price.toLocaleString() + '</td><td>KSh ' + f.total.toLocaleString() + '</td><td>' + (f.pay || 'Cash') + '</td><td>' + (ql[f.ot] || '') + '</td></tr>'; });
-      const t = document.getElementById('feed-table'); if (t) t.innerHTML = rows;
+      const tbl = document.getElementById('feed-table'); if (tbl) tbl.innerHTML = rows;
       const z = document.getElementById('feed-zero'); if (z) z.style.display = feeds.length ? 'none' : 'block';
       const title = document.getElementById('feed-log-title'); if (title) title.textContent = (sw ? 'Historia ya Ununuzi wa Chakula' : 'Feed Purchase History') + (ym ? ' — ' + monthName(+ym.split('-')[1] - 1) + ' ' + ym.split('-')[0] : '');
     }
@@ -3561,7 +3560,7 @@
       const sw = getLang() === 'sw';
       let rows = '<tr><th>' + (sw ? 'Tarehe' : 'Date') + '</th><th>' + (sw ? 'Aina' : 'Category') + '</th><th>' + (sw ? 'Kiasi' : 'Amount') + '</th><th>' + (sw ? 'Kulipwa kupitia' : 'Paid via') + '</th><th>' + (sw ? 'Maelezo' : 'Description') + '</th></tr>';
       shown.forEach(e => { rows += '<tr><td>' + shortDate(e.date) + '</td><td>' + escH(e.cat) + '</td><td style="color:var(--red)">KSh ' + (e.amount || 0).toLocaleString() + '</td><td>' + (e.pay || 'Cash') + '</td><td>' + (e.desc ? escH(e.desc) : '—') + '</td></tr>'; });
-      const t = document.getElementById('exp-table'); if (t) t.innerHTML = rows;
+      const tbl = document.getElementById('exp-table'); if (tbl) tbl.innerHTML = rows;
       const z = document.getElementById('exp-zero'); if (z) z.style.display = shown.length ? 'none' : 'block';
       const title = document.getElementById('exp-log-title'); if (title) title.textContent = (sw ? 'Rekodi ya Matumizi' : 'Expense Log') + (calYm ? ' — ' + monthName(+calYm.split('-')[1] - 1) + ' ' + calYm.split('-')[0] : '');
     }
@@ -3758,7 +3757,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const sw = getLang() === 'sw';
       let rows = '<tr><th>' + (sw ? 'Tarehe' : 'Date') + '</th><th>' + (sw ? 'Kundi la Kuku' : 'Flock Batch') + '</th><th>' + (sw ? 'Umri (wiki)' : 'Age (wks)') + '</th><th>' + (sw ? 'Ndege' : 'Birds') + '</th><th>' + (sw ? 'Sababu' : 'Cause') + '</th><th>' + (sw ? 'Daktari' : 'Vet') + '</th></tr>';
       deaths.forEach(d => { rows += '<tr><td>' + shortDate(d.date) + '</td><td>' + escH(d.batchName || 'General') + '</td><td>' + (d.ageWks || '—') + '</td><td>' + d.num + '</td><td>' + escH(d.cause.split(' — ')[0].split(' /')[0]) + '</td><td>' + (vm[d.vet] || '') + '</td></tr>'; });
-      const t = document.getElementById('mort-table'); if (t) t.innerHTML = rows;
+      const tbl = document.getElementById('mort-table'); if (tbl) tbl.innerHTML = rows;
       const z = document.getElementById('mort-zero'); if (z) z.style.display = deaths.length ? 'none' : 'block';
       const title = document.getElementById('mort-log-title'); if (title) title.textContent = (sw ? 'Rekodi ya Vifo' : 'Death Log') + (ym ? ' — ' + monthName(+ym.split('-')[1] - 1) + ' ' + ym.split('-')[0] : '');
     }
@@ -4007,7 +4006,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const sw = getLang() === 'sw';
       let rows = '<tr><th>' + (sw ? 'Tarehe' : 'Date') + '</th><th>' + (sw ? 'Msambazaji' : 'Supplier') + '</th><th>' + (sw ? 'Simu' : 'Phone') + '</th><th>' + (sw ? 'Huduma / Bidhaa' : 'Service / Item') + '</th><th>' + (sw ? 'Kiasi Kilicholipwa' : 'Amount Paid') + '</th><th>' + (sw ? 'Ukadiriaji' : 'Rating') + '</th></tr>';
       ratings.forEach(r => { rows += '<tr><td>' + shortDate(r.date) + '</td><td><strong>' + escH(r.name) + '</strong></td><td>' + escH(r.phone || '—') + '</td><td>' + escH(r.what || '—') + '</td><td>' + (r.amount ? 'KSh ' + r.amount.toLocaleString() : '—') + '</td><td><span class="stars' + (r.rating >= 4 ? ' hi' : r.rating <= 2 ? ' lo' : '') + '">' + stars(r.rating || 0) + '</span></td></tr>'; });
-      const t = document.getElementById('sup-log-table'); if (t) t.innerHTML = rows;
+      const tbl = document.getElementById('sup-log-table'); if (tbl) tbl.innerHTML = rows;
       const z = document.getElementById('sup-log-zero'); if (z) z.style.display = ratings.length ? 'none' : 'block';
       const title = document.getElementById('sup-log-title'); if (title) title.textContent = (sw ? 'Rekodi ya Manunuzi ya Msambazaji' : 'Supplier Transaction Log') + (ym ? ' — ' + monthName(+ym.split('-')[1] - 1) + ' ' + ym.split('-')[0] : '');
     }
