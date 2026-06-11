@@ -1737,6 +1737,49 @@
       }
     }
   </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCankCl3cQC3I0-b3634gi6_UXbTi-2VpU",
+      authDomain: "kuku-farm-b2d0f.firebaseapp.com",
+      projectId: "kuku-farm-b2d0f",
+      storageBucket: "kuku-farm-b2d0f.firebasestorage.app",
+      messagingSenderId: "592004187385",
+      appId: "1:592004187385:web:da43c408c1c15f24bf4e28"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    db.enablePersistence().catch(err => {
+      console.log('Offline persistence unavailable:', err.code);
+    });
+
+    async function cloudSync(phone, key, value) {
+      try {
+        await db.collection('farms').doc(phone)
+          .collection('data').doc(key)
+          .set({ value: JSON.stringify(value), ts: Date.now() });
+      } catch (e) {
+        console.log('Sync failed, using localStorage only:', e);
+      }
+    }
+
+    async function cloudLoad(phone) {
+      try {
+        const snap = await db.collection('farms').doc(phone)
+          .collection('data').get();
+        snap.forEach(doc => {
+          const fullKey = 'kuku3:' + phone + ':' + doc.id;
+          localStorage.setItem(fullKey, doc.data().value);
+        });
+        console.log('Cloud data loaded for', phone);
+      } catch (e) {
+        console.log('Cloud load failed, using localStorage:', e);
+      }
+    }
+  </script>
 </head>
 
 <body>
@@ -2467,399 +2510,399 @@
                 <div class="g2" style="gap:10px;margin-bottom:13px">
                   <div
                     style="background:var(--red-bg);border-radius:var(--r);padding:13px;border:1px solid var(--red-border)">
-                    <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">BAGS LEFT</div>
                     <div id="lbl-bags-left" style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">
                       BAGS LEFT</div>
                     <div style="font-size:30px;font-weight:800;color:var(--red)" id="feed-stock-bags">0</div>
                   </div>
                   <div
                     style="background:var(--amber-bg);border-radius:var(--r);padding:13px;border:1px solid var(--amber-border)">
-                    <div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:4px">DAYS LEFT</div>
                     <div id="lbl-days-left" style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:4px">
                       DAYS LEFT</div>
                     <div style="font-size:30px;font-weight:800;color:var(--amber)" id="feed-days-empty">0</div>
                   </div>
                 </div>
-                <div class="prog-row">const btnTxt = (v.status === 'missed' || v.status === 'overdue') ? t('Record
-                  late') : t('Mark given');<span id="feed-stock-label">0 bags</span></div>
-                <div class="bar-track" style="height:10px">
-                  <div class="bar-fill bar-red" id="feed-stock-bar" style="width:0%"></div>
-                </div>
-                <div class="alert al-red" style="margin-top:10px"><span class="alert-ico">📌</span>
-                  <div id="alert-feed-reorder">Reorder when stock hits <strong>15 bags</strong>.</div>
-                </div>
+                <div class="prog-row"><span id="lbl-stock-level">Stock level</span><span id="feed-stock-label">0
+                    bags</span></div>
+                late') : t('Mark given');<span id="feed-stock-label">0 bags</span>
               </div>
-              <div class="card">
-                <h2>Price Trend (per bag)</h2>
-                <div class="bars2" style="height:100px" id="feed-price-bars">
-                  <div style="font-size:13px;color:var(--text3);align-self:center;width:100%;text-align:center">
-                    Record
-                    purchases to see trends.</div>
-                </div>
+              <div class="bar-track" style="height:10px">
+                <div class="bar-fill bar-red" id="feed-stock-bar" style="width:0%"></div>
+              </div>
+              <div class="alert al-red" style="margin-top:10px"><span class="alert-ico">📌</span>
+                <div id="alert-feed-reorder">Reorder when stock hits <strong>15 bags</strong>.</div>
               </div>
             </div>
-          </div>
-          <!-- Calendar for feed history -->
-          <div class="card g1" style="padding:14px 18px">
-            <div class="cal-picker">
-              <label>View month:</label>
-              <select id="feed-cal-month"></select>
-              <select id="feed-cal-year"></select>
-              <button class="cal-apply" onclick="renderFeedTable()">Show</button>
-              <button class="btn btn-sm" onclick="clearFeedCal()">All records</button>
-              <button class="btn btn-sm" onclick="exportTablePDF('feed-table','Feed Purchases')">⬇ Export
-                PDF</button>
-            </div>
-          </div>
-          <div class="card flush g1">
-            <div class="card-head">
-              <h2 style="margin:0" id="feed-log-title">Feed Purchase History</h2>
-            </div>
-            <div class="card-body" style="padding:0">
-              <div class="tbl-wrap">
-                <table id="feed-table">
-                  <tr>
-                    <th>Date</th>
-                    <th>Supplier</th>
-                    <th>Type</th>
-                    <th>Bags</th>
-                    <th>Price/bag</th>
-                    <th>Total</th>
-                    <th>Paid via</th>
-                    <th>Delivery</th>
-                    <th></th>
-                  </tr>
-                </table>
-              </div>
-              <div id="feed-zero" class="zero-state">
-                <div class="zi">🌾</div><strong>No feed purchases recorded yet</strong>
+            <div class="card">
+              <h2>Price Trend (per bag)</h2>
+              <div class="bars2" style="height:100px" id="feed-price-bars">
+                <div style="font-size:13px;color:var(--text3);align-self:center;width:100%;text-align:center">
+                  Record
+                  purchases to see trends.</div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- ═══ FLOCK & HEALTH ═══ -->
-        <div class="page" id="page-flock">
-          <div class="g4" style="margin-bottom:14px">
-            <div class="metric">
-              <div class="lbl">Birds alive</div>
-              <div class="val green" id="f-live-birds">—</div>
-              <div class="sub" id="f-started">—</div>
-            </div>
-            <div class="metric">
-              <div class="lbl">Deaths this month</div>
-              <div class="val amber" id="f-mort-month">0</div>
-              <div class="sub">Target &lt;1%/month</div>
-            </div>
-            <div class="metric">
-              <div class="lbl">Laying rate</div>
-              <div class="val green" id="f-lay-rate">—</div>
-              <div class="sub">From today's record</div>
-            </div>
-            <div class="metric">
-              <div class="lbl">Flock age</div>
-              <div class="val" id="f-age-wks">—</div>
-              <div class="sub" id="f-age-days">—</div>
-            </div>
-          </div>
-          <div class="g2">
-            <div class="card">
-              <h2>Record a Death</h2>
-              <div class="form-row">
-                <div class="form-group"><label>Date found</label><input type="date" id="m-date" /></div>
-                <div class="form-group"><label>Number of birds</label>
-                  <div class="stepper"><button class="stepper-btn" onclick="stepVal('m-num',-1)">−</button><input
-                      type="number" id="m-num" value="1" min="1" /><button class="stepper-btn"
-                      onclick="stepVal('m-num',1)">+</button></div>
-                </div>
-              </div>
-              <div class="form-group"><label>Flock batch (which birds?)</label>
-                <select id="m-flock-batch"></select>
-              </div>
-              <div class="form-group"><label>Flock age at death (weeks)</label><input type="number" id="m-age"
-                  placeholder="e.g. 32" inputmode="numeric" min="1" /></div>
-              <div class="form-group"><label>Likely cause</label>
-                <select id="m-cause">
-                  <option>Unknown — needs investigation</option>
-                  <option>Breathing problems / Respiratory</option>
-                  <option>Stomach illness / Coccidiosis</option>
-                  <option>Newcastle disease</option>
-                  <option>Heat stress</option>
-                  <option>Injury / trauma</option>
-                  <option>Egg problems (peritonitis)</option>
-                  <option>Contaminated feed or water</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div class="form-group"><label>Symptoms observed</label><textarea id="m-symptoms"
-                  placeholder="e.g. Drooping wings, watery droppings…"></textarea></div>
-              <div class="form-group"><label>Vet status</label>
-                <select id="m-vet">
-                  <option value="no">Not yet reported</option>
-                  <option value="called">Reported by phone</option>
-                  <option value="visited">Vet examined the birds</option>
-                  <option value="treated">Treatment given by vet</option>
-                </select>
-              </div>
-              <div class="form-actions">
-                <button class="btn btn-primary" onclick="addMortality()">Record Death(s)</button>
-                <button class="btn" onclick="generateVetReport()">Generate Vet Report</button>
-              </div>
-              <div class="msg-banner" id="m-msg"></div>
-            </div>
-            <div class="card">
-              <div id="vet-placeholder" style="font-size:13px;color:var(--text3);margin-bottom:14px">Fill the death
-                record form and tap "Generate Vet Report" to create a shareable report.</div>
-              <pre id="vet-report"
-                style="display:none;background:var(--bg3);border-radius:var(--r);padding:14px;font-size:12px;color:var(--text2);white-space:pre-wrap;font-family:var(--mono);border:1px solid var(--border);line-height:1.7;margin-bottom:10px"></pre>
-              <div id="vet-report-actions" style="display:none;margin-bottom:16px">
-                <button class="btn btn-sm btn-wa" onclick="shareVetReport()">📤 Share via WhatsApp</button>
-              </div>
-              <!-- Mortality chart -->
-              <h2>Monthly Mortality Chart</h2>
-              <div class="mort-chart" id="mort-chart"></div>
-              <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each colour = one flock batch.
-                Height
-                =
-                total deaths that month.</div>
-            </div>
-          </div>
-          <!-- Calendar + PDF for death log -->
-          <div class="card g1" style="padding:14px 18px">
-            <div class="cal-picker">
-              <label>View month:</label>
-              <select id="mort-cal-month"></select>
-              <select id="mort-cal-year"></select>
-              <button class="cal-apply" onclick="renderMortTable()">Show</button>
-              <button class="btn btn-sm" onclick="clearMortCal()">All records</button>
-              <button class="btn btn-sm" onclick="exportTablePDF('mort-table','Mortality Log')">⬇ Export
-                PDF</button>
-            </div>
-          </div>
-          <div class="card flush g1">
-            <div class="card-head">
-              <h2 style="margin:0" id="mort-log-title">Death Log</h2>
-            </div>
-            <div class="card-body" style="padding:0">
-              <div class="tbl-wrap">
-                <table id="mort-table">
-                  <tr>
-                    <th>Date</th>
-                    <th>Flock Batch</th>
-                    <th>Age (wks)</th>
-                    <th>Birds</th>
-                    <th>Cause</th>
-                    <th>Vet</th>
-                  </tr>
-                </table>
-              </div>
-              <div id="mort-zero" class="zero-state" style="padding:20px 0">
-                <div class="zi">🎉</div><strong>No deaths recorded</strong>
-              </div>
-            </div>
+        <!-- Calendar for feed history -->
+        <div class="card g1" style="padding:14px 18px">
+          <div class="cal-picker">
+            <label>View month:</label>
+            <select id="feed-cal-month"></select>
+            <select id="feed-cal-year"></select>
+            <button class="cal-apply" onclick="renderFeedTable()">Show</button>
+            <button class="btn btn-sm" onclick="clearFeedCal()">All records</button>
+            <button class="btn btn-sm" onclick="exportTablePDF('feed-table','Feed Purchases')">⬇ Export
+              PDF</button>
           </div>
         </div>
-
-        <!-- ═══ VACCINATION ═══ -->
-        <div class="page" id="page-vaccines">
-          <!-- Flock selector -->
-          <div class="card g1">
-            <div class="sec-hd">
-              <h2 style="margin:0">Your Flock Batches</h2>
-              <button class="btn btn-sm btn-primary" onclick="openAddFlockModal()">+ Add Flock Batch</button>
-            </div>
-            <div class="vac-flock-tab" id="flock-tabs"></div>
-            <div id="vac-flock-info" style="font-size:13px;color:var(--text3)">No flock batches added yet. Add your
-              first batch above.</div>
+        <div class="card flush g1">
+          <div class="card-head">
+            <h2 style="margin:0" id="feed-log-title">Feed Purchase History</h2>
           </div>
-          <div id="vac-reminders" style="margin-bottom:14px"></div>
-          <div class="card" id="vac-schedule-card">
-            <div class="sec-hd">
-              <h2 style="margin:0" id="vac-schedule-title">Vaccination Schedule</h2><button class="btn btn-sm"
-                onclick="exportTablePDF('vac-table','Vaccination Schedule')">⬇ PDF</button>
-            </div>
-            <div id="vac-age" style="font-size:13px;color:var(--text3);margin-bottom:12px"></div>
+          <div class="card-body" style="padding:0">
             <div class="tbl-wrap">
-              <table id="vac-table">
+              <table id="feed-table">
                 <tr>
-                  <th>Vaccine</th>
-                  <th>Target age</th>
-                  <th>Due date</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                  <th>Vet / Given by</th>
-                  <th>Action</th>
+                  <th>Date</th>
+                  <th>Supplier</th>
+                  <th>Type</th>
+                  <th>Bags</th>
+                  <th>Price/bag</th>
+                  <th>Total</th>
+                  <th>Paid via</th>
+                  <th>Delivery</th>
+                  <th></th>
                 </tr>
               </table>
             </div>
-            <div class="sep"></div>
-            <h3>📋 Record a vaccination you gave</h3>
-            <div class="alert al-blue" style="margin-bottom:12px"><span class="alert-ico">ℹ</span>
-              <div id="alert-vac-info">Pick the batch and the vaccine, then enter the date. The flock's age is worked
-                out for you. The app uses these records to predict what's missed, overdue, or coming up.</div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Which batch did you vaccinate?</label><select id="vrec-batch"
-                  onchange="updateVacAgePreview()"></select></div>
-              <div class="form-group"><label>Which vaccine type?</label><select id="vrec-type"
-                  onchange="toggleVacCustom()"></select></div>
-            </div>
-            <div class="form-group" id="vrec-custom-wrap" style="display:none"><label>Custom vaccine
-                name</label><input type="text" id="vrec-custom" placeholder="e.g. Newcastle booster" /></div>
-            <div class="form-row">
-              <div class="form-group"><label>Date you vaccinated</label><input type="date" id="vrec-date"
-                  onchange="updateVacAgePreview()" /></div>
-              <div class="form-group"><label>Age of flock on that day</label><input type="text" id="vrec-age" readonly
-                  style="background:var(--bg3);font-weight:700" /></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Given by (vet name, optional)</label><input type="text" id="vrec-vet"
-                  placeholder="e.g. Dr. Kamau" /></div>
-              <div class="form-group"><label>Vet phone (optional)</label><input type="tel" id="vrec-vet-phone"
-                  placeholder="e.g. 0712345678" /></div>
-            </div>
-            <div class="form-actions"><button class="btn btn-primary" onclick="saveVaccination()">✓ Save vaccination
-                record</button></div>
-            <div class="msg-banner" id="vac-msg"></div>
-          </div>
-        </div>
-
-        <!-- ═══ SUPPLIERS ═══ -->
-        <div class="page" id="page-suppliers">
-          <div class="g2">
-            <div class="card">
-              <h2>Supplier Reliability Scores</h2>
-              <div id="supplier-scores">
-                <div class="zero-state" style="padding:20px 0">
-                  <div class="zi">🚚</div>
-                  <p>Record feed purchases and supplier ratings to see scores.</p>
-                </div>
-              </div>
-            </div>
-            <div class="card">
-              <h2>Rate a Supplier</h2>
-              <div class="form-group"><label>Supplier name</label><input type="text" id="sup-name"
-                  placeholder="Supplier name" /></div>
-              <div class="form-group"><label>Phone number <span style="color:var(--red)">*required</span></label><input
-                  type="tel" id="sup-phone" placeholder="0712345678" /></div>
-              <div class="form-group"><label>What did you buy / what service?</label>
-                <select id="sup-what">
-                  <option value="">— Select —</option>
-                  <option>Layers mash / Feed bags</option>
-                  <option>Vaccines &amp; medicines</option>
-                  <option>Day-old chicks</option>
-                  <option>Equipment &amp; supplies</option>
-                  <option>Veterinary services</option>
-                  <option>Transport / delivery</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div class="form-group"><label>Amount paid (KSh)</label><input type="number" id="sup-amount"
-                  placeholder="e.g. 57000" inputmode="numeric" /></div>
-              <div class="form-group"><label>Satisfaction rating</label>
-                <div class="star-rating" id="sup-star-row">
-                  <span onclick="setSupRating(1)">★</span>
-                  <span onclick="setSupRating(2)">★</span>
-                  <span onclick="setSupRating(3)">★</span>
-                  <span onclick="setSupRating(4)">★</span>
-                  <span onclick="setSupRating(5)">★</span>
-                </div>
-                <input type="hidden" id="sup-rating" value="0" />
-                <div style="font-size:12px;color:var(--text3)" id="sup-rating-label">Tap stars to rate</div>
-              </div>
-              <div class="form-group"><label>Notes</label><textarea id="sup-notes"
-                  placeholder="e.g. Delivered 3 days late, called twice."></textarea></div>
-              <div class="form-actions"><button class="btn btn-primary" onclick="saveSupplierRating()">Save
-                  Rating</button></div>
-              <div class="msg-banner" id="sup-msg"></div>
-            </div>
-          </div>
-          <!-- Supplier log with calendar -->
-          <div class="card g1" style="padding:14px 18px">
-            <div class="cal-picker">
-              <label>View month:</label>
-              <select id="sup-cal-month"></select>
-              <select id="sup-cal-year"></select>
-              <button class="cal-apply" onclick="renderSupplierLog()">Show</button>
-              <button class="btn btn-sm" onclick="clearSupCal()">All records</button>
-              <button class="btn btn-sm" onclick="exportTablePDF('sup-log-table','Supplier Log')">⬇ Export
-                PDF</button>
-            </div>
-          </div>
-          <div class="card flush g1">
-            <div class="card-head">
-              <h2 style="margin:0" id="sup-log-title">Supplier Transaction Log</h2>
-            </div>
-            <div class="card-body" style="padding:0">
-              <div class="tbl-wrap">
-                <table id="sup-log-table">
-                  <tr>
-                    <th>Date</th>
-                    <th>Supplier</th>
-                    <th>Phone</th>
-                    <th>Service / Item</th>
-                    <th>Amount Paid</th>
-                    <th>Rating</th>
-                    <th>Notes</th>
-                </table>
-              </div>
-              <div id="sup-log-zero" class="zero-state">
-                <div class="zi">🚚</div>
-                <p>No supplier ratings recorded yet.</p>
-              </div>
+            <div id="feed-zero" class="zero-state">
+              <div class="zi">🌾</div><strong>No feed purchases recorded yet</strong>
             </div>
           </div>
         </div>
-
-        <!-- ═══ SETTINGS ═══ -->
-        <div class="page" id="page-settings">
-          <div class="g2">
-            <div class="card">
-              <h2>Farm Details</h2>
-              <div class="form-group"><label>Farm name</label><input type="text" id="set-name"
-                  placeholder="e.g. Mutua Layers Farm" /></div>
-              <div class="form-group"><label>Location / tagline</label><input type="text" id="set-tag"
-                  placeholder="e.g. Nakuru County — 800 birds" /></div>
-              <div class="form-group"><label>Usual price per tray (KSh)</label><input type="number" id="set-pprice"
-                  placeholder="e.g. 430" inputmode="numeric" /></div>
-              <div class="form-actions"><button class="btn btn-primary" onclick="saveFarmSettings()">Save
-                  Settings</button></div>
-              <div class="msg-banner" id="set-msg"></div>
-            </div>
-            <div class="card">
-              <h2>Export Records</h2>
-              <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Download records as PDF — useful for
-                bank loan applications and vet visits.</div>
-              <button class="btn" style="width:100%;justify-content:flex-start" onclick="exportBackup()">💾 Download
-                full backup (.json)</button>
-              <button class="btn" style="width:100%;justify-content:flex-start"
-                onclick="document.getElementById('backup-file-input').click()">♻ Restore from backup</button>
-              <input type="file" id="backup-file-input" accept="application/json" style="display:none"
-                onchange="if(this.files[0]) importBackup(this.files[0])" />
-              <div class="form-actions" style="flex-direction:column;gap:10px">
-                <button class="btn" style="width:100%;justify-content:flex-start"
-                  onclick="exportTablePDF('full-sales-table','Sales')">⬇ Sales PDF</button>
-                <button class="btn" style="width:100%;justify-content:flex-start"
-                  onclick="exportTablePDF('debtor-table','Debtors')">⬇ Debtors PDF</button>
-                <button class="btn" style="width:100%;justify-content:flex-start"
-                  onclick="exportTablePDF('feed-table','Feed Purchases')">⬇ Feed Purchases PDF</button>
-                <button class="btn" style="width:100%;justify-content:flex-start"
-                  onclick="exportTablePDF('exp-table','Expenses')">⬇ Expenses PDF</button>
-                <button class="btn" style="width:100%;justify-content:flex-start"
-                  onclick="exportTablePDF('mort-table','Mortality Log')">⬇ Mortality PDF</button>
-              </div>
-              <div class="sep"></div>
-              <h3>Danger Zone</h3>
-              <div class="alert al-red"><span class="alert-ico">⚠</span>
-                <div id="alert-settings-danger">Download PDFs before clearing!</div>
-              </div>
-              <button class="btn btn-danger" onclick="confirmClearAll()">Clear all records for this farm</button>
-            </div>
-          </div>
-        </div>
-
-      </main>
     </div>
+
+    <!-- ═══ FLOCK & HEALTH ═══ -->
+    <div class="page" id="page-flock">
+      <div class="g4" style="margin-bottom:14px">
+        <div class="metric">
+          <div class="lbl">Birds alive</div>
+          <div class="val green" id="f-live-birds">—</div>
+          <div class="sub" id="f-started">—</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Deaths this month</div>
+          <div class="val amber" id="f-mort-month">0</div>
+          <div class="sub">Target &lt;1%/month</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Laying rate</div>
+          <div class="val green" id="f-lay-rate">—</div>
+          <div class="sub">From today's record</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Flock age</div>
+          <div class="val" id="f-age-wks">—</div>
+          <div class="sub" id="f-age-days">—</div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <h2>Record a Death</h2>
+          <div class="form-row">
+            <div class="form-group"><label>Date found</label><input type="date" id="m-date" /></div>
+            <div class="form-group"><label>Number of birds</label>
+              <div class="stepper"><button class="stepper-btn" onclick="stepVal('m-num',-1)">−</button><input
+                  type="number" id="m-num" value="1" min="1" /><button class="stepper-btn"
+                  onclick="stepVal('m-num',1)">+</button></div>
+            </div>
+          </div>
+          <div class="form-group"><label>Flock batch (which birds?)</label>
+            <select id="m-flock-batch"></select>
+          </div>
+          <div class="form-group"><label>Flock age at death (weeks)</label><input type="number" id="m-age"
+              placeholder="e.g. 32" inputmode="numeric" min="1" /></div>
+          <div class="form-group"><label>Likely cause</label>
+            <select id="m-cause">
+              <option>Unknown — needs investigation</option>
+              <option>Breathing problems / Respiratory</option>
+              <option>Stomach illness / Coccidiosis</option>
+              <option>Newcastle disease</option>
+              <option>Heat stress</option>
+              <option>Injury / trauma</option>
+              <option>Egg problems (peritonitis)</option>
+              <option>Contaminated feed or water</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Symptoms observed</label><textarea id="m-symptoms"
+              placeholder="e.g. Drooping wings, watery droppings…"></textarea></div>
+          <div class="form-group"><label>Vet status</label>
+            <select id="m-vet">
+              <option value="no">Not yet reported</option>
+              <option value="called">Reported by phone</option>
+              <option value="visited">Vet examined the birds</option>
+              <option value="treated">Treatment given by vet</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addMortality()">Record Death(s)</button>
+            <button class="btn" onclick="generateVetReport()">Generate Vet Report</button>
+          </div>
+          <div class="msg-banner" id="m-msg"></div>
+        </div>
+        <div class="card">
+          <div id="vet-placeholder" style="font-size:13px;color:var(--text3);margin-bottom:14px">Fill the death
+            record form and tap "Generate Vet Report" to create a shareable report.</div>
+          <pre id="vet-report"
+            style="display:none;background:var(--bg3);border-radius:var(--r);padding:14px;font-size:12px;color:var(--text2);white-space:pre-wrap;font-family:var(--mono);border:1px solid var(--border);line-height:1.7;margin-bottom:10px"></pre>
+          <div id="vet-report-actions" style="display:none;margin-bottom:16px">
+            <button class="btn btn-sm btn-wa" onclick="shareVetReport()">📤 Share via WhatsApp</button>
+          </div>
+          <!-- Mortality chart -->
+          <h2>Monthly Mortality Chart</h2>
+          <div class="mort-chart" id="mort-chart"></div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each colour = one flock batch.
+            Height
+            =
+            total deaths that month.</div>
+        </div>
+      </div>
+      <!-- Calendar + PDF for death log -->
+      <div class="card g1" style="padding:14px 18px">
+        <div class="cal-picker">
+          <label>View month:</label>
+          <select id="mort-cal-month"></select>
+          <select id="mort-cal-year"></select>
+          <button class="cal-apply" onclick="renderMortTable()">Show</button>
+          <button class="btn btn-sm" onclick="clearMortCal()">All records</button>
+          <button class="btn btn-sm" onclick="exportTablePDF('mort-table','Mortality Log')">⬇ Export
+            PDF</button>
+        </div>
+      </div>
+      <div class="card flush g1">
+        <div class="card-head">
+          <h2 style="margin:0" id="mort-log-title">Death Log</h2>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="tbl-wrap">
+            <table id="mort-table">
+              <tr>
+                <th>Date</th>
+                <th>Flock Batch</th>
+                <th>Age (wks)</th>
+                <th>Birds</th>
+                <th>Cause</th>
+                <th>Vet</th>
+              </tr>
+            </table>
+          </div>
+          <div id="mort-zero" class="zero-state" style="padding:20px 0">
+            <div class="zi">🎉</div><strong>No deaths recorded</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VACCINATION ═══ -->
+    <div class="page" id="page-vaccines">
+      <!-- Flock selector -->
+      <div class="card g1">
+        <div class="sec-hd">
+          <h2 style="margin:0">Your Flock Batches</h2>
+          <button class="btn btn-sm btn-primary" onclick="openAddFlockModal()">+ Add Flock Batch</button>
+        </div>
+        <div class="vac-flock-tab" id="flock-tabs"></div>
+        <div id="vac-flock-info" style="font-size:13px;color:var(--text3)">No flock batches added yet. Add your
+          first batch above.</div>
+      </div>
+      <div id="vac-reminders" style="margin-bottom:14px"></div>
+      <div class="card" id="vac-schedule-card">
+        <div class="sec-hd">
+          <h2 style="margin:0" id="vac-schedule-title">Vaccination Schedule</h2><button class="btn btn-sm"
+            onclick="exportTablePDF('vac-table','Vaccination Schedule')">⬇ PDF</button>
+        </div>
+        <div id="vac-age" style="font-size:13px;color:var(--text3);margin-bottom:12px"></div>
+        <div class="tbl-wrap">
+          <table id="vac-table">
+            <tr>
+              <th>Vaccine</th>
+              <th>Target age</th>
+              <th>Due date</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Vet / Given by</th>
+              <th>Action</th>
+            </tr>
+          </table>
+        </div>
+        <div class="sep"></div>
+        <h3>📋 Record a vaccination you gave</h3>
+        <div class="alert al-blue" style="margin-bottom:12px"><span class="alert-ico">ℹ</span>
+          <div id="alert-vac-info">Pick the batch and the vaccine, then enter the date. The flock's age is worked
+            out for you. The app uses these records to predict what's missed, overdue, or coming up.</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Which batch did you vaccinate?</label><select id="vrec-batch"
+              onchange="updateVacAgePreview()"></select></div>
+          <div class="form-group"><label>Which vaccine type?</label><select id="vrec-type"
+              onchange="toggleVacCustom()"></select></div>
+        </div>
+        <div class="form-group" id="vrec-custom-wrap" style="display:none"><label>Custom vaccine
+            name</label><input type="text" id="vrec-custom" placeholder="e.g. Newcastle booster" /></div>
+        <div class="form-row">
+          <div class="form-group"><label>Date you vaccinated</label><input type="date" id="vrec-date"
+              onchange="updateVacAgePreview()" /></div>
+          <div class="form-group"><label>Age of flock on that day</label><input type="text" id="vrec-age" readonly
+              style="background:var(--bg3);font-weight:700" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Given by (vet name, optional)</label><input type="text" id="vrec-vet"
+              placeholder="e.g. Dr. Kamau" /></div>
+          <div class="form-group"><label>Vet phone (optional)</label><input type="tel" id="vrec-vet-phone"
+              placeholder="e.g. 0712345678" /></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="saveVaccination()">✓ Save vaccination
+            record</button></div>
+        <div class="msg-banner" id="vac-msg"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SUPPLIERS ═══ -->
+    <div class="page" id="page-suppliers">
+      <div class="g2">
+        <div class="card">
+          <h2>Supplier Reliability Scores</h2>
+          <div id="supplier-scores">
+            <div class="zero-state" style="padding:20px 0">
+              <div class="zi">🚚</div>
+              <p>Record feed purchases and supplier ratings to see scores.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Rate a Supplier</h2>
+          <div class="form-group"><label>Supplier name</label><input type="text" id="sup-name"
+              placeholder="Supplier name" /></div>
+          <div class="form-group"><label>Phone number <span style="color:var(--red)">*required</span></label><input
+              type="tel" id="sup-phone" placeholder="0712345678" /></div>
+          <div class="form-group"><label>What did you buy / what service?</label>
+            <select id="sup-what">
+              <option value="">— Select —</option>
+              <option>Layers mash / Feed bags</option>
+              <option>Vaccines &amp; medicines</option>
+              <option>Day-old chicks</option>
+              <option>Equipment &amp; supplies</option>
+              <option>Veterinary services</option>
+              <option>Transport / delivery</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Amount paid (KSh)</label><input type="number" id="sup-amount"
+              placeholder="e.g. 57000" inputmode="numeric" /></div>
+          <div class="form-group"><label>Satisfaction rating</label>
+            <div class="star-rating" id="sup-star-row">
+              <span onclick="setSupRating(1)">★</span>
+              <span onclick="setSupRating(2)">★</span>
+              <span onclick="setSupRating(3)">★</span>
+              <span onclick="setSupRating(4)">★</span>
+              <span onclick="setSupRating(5)">★</span>
+            </div>
+            <input type="hidden" id="sup-rating" value="0" />
+            <div style="font-size:12px;color:var(--text3)" id="sup-rating-label">Tap stars to rate</div>
+          </div>
+          <div class="form-group"><label>Notes</label><textarea id="sup-notes"
+              placeholder="e.g. Delivered 3 days late, called twice."></textarea></div>
+          <div class="form-actions"><button class="btn btn-primary" onclick="saveSupplierRating()">Save
+              Rating</button></div>
+          <div class="msg-banner" id="sup-msg"></div>
+        </div>
+      </div>
+      <!-- Supplier log with calendar -->
+      <div class="card g1" style="padding:14px 18px">
+        <div class="cal-picker">
+          <label>View month:</label>
+          <select id="sup-cal-month"></select>
+          <select id="sup-cal-year"></select>
+          <button class="cal-apply" onclick="renderSupplierLog()">Show</button>
+          <button class="btn btn-sm" onclick="clearSupCal()">All records</button>
+          <button class="btn btn-sm" onclick="exportTablePDF('sup-log-table','Supplier Log')">⬇ Export
+            PDF</button>
+        </div>
+      </div>
+      <div class="card flush g1">
+        <div class="card-head">
+          <h2 style="margin:0" id="sup-log-title">Supplier Transaction Log</h2>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="tbl-wrap">
+            <table id="sup-log-table">
+              <tr>
+                <th>Date</th>
+                <th>Supplier</th>
+                <th>Phone</th>
+                <th>Service / Item</th>
+                <th>Amount Paid</th>
+                <th>Rating</th>
+                <th>Notes</th>
+            </table>
+          </div>
+          <div id="sup-log-zero" class="zero-state">
+            <div class="zi">🚚</div>
+            <p>No supplier ratings recorded yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SETTINGS ═══ -->
+    <div class="page" id="page-settings">
+      <div class="g2">
+        <div class="card">
+          <h2>Farm Details</h2>
+          <div class="form-group"><label>Farm name</label><input type="text" id="set-name"
+              placeholder="e.g. Mutua Layers Farm" /></div>
+          <div class="form-group"><label>Location / tagline</label><input type="text" id="set-tag"
+              placeholder="e.g. Nakuru County — 800 birds" /></div>
+          <div class="form-group"><label>Usual price per tray (KSh)</label><input type="number" id="set-pprice"
+              placeholder="e.g. 430" inputmode="numeric" /></div>
+          <div class="form-actions"><button class="btn btn-primary" onclick="saveFarmSettings()">Save
+              Settings</button></div>
+          <div class="msg-banner" id="set-msg"></div>
+        </div>
+        <div class="card">
+          <h2>Export Records</h2>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Download records as PDF — useful for
+            bank loan applications and vet visits.</div>
+          <button class="btn" style="width:100%;justify-content:flex-start" onclick="exportBackup()">💾 Download
+            full backup (.json)</button>
+          <button class="btn" style="width:100%;justify-content:flex-start"
+            onclick="document.getElementById('backup-file-input').click()">♻ Restore from backup</button>
+          <input type="file" id="backup-file-input" accept="application/json" style="display:none"
+            onchange="if(this.files[0]) importBackup(this.files[0])" />
+          <div class="form-actions" style="flex-direction:column;gap:10px">
+            <button class="btn" style="width:100%;justify-content:flex-start"
+              onclick="exportTablePDF('full-sales-table','Sales')">⬇ Sales PDF</button>
+            <button class="btn" style="width:100%;justify-content:flex-start"
+              onclick="exportTablePDF('debtor-table','Debtors')">⬇ Debtors PDF</button>
+            <button class="btn" style="width:100%;justify-content:flex-start"
+              onclick="exportTablePDF('feed-table','Feed Purchases')">⬇ Feed Purchases PDF</button>
+            <button class="btn" style="width:100%;justify-content:flex-start"
+              onclick="exportTablePDF('exp-table','Expenses')">⬇ Expenses PDF</button>
+            <button class="btn" style="width:100%;justify-content:flex-start"
+              onclick="exportTablePDF('mort-table','Mortality Log')">⬇ Mortality PDF</button>
+          </div>
+          <div class="sep"></div>
+          <h3>Danger Zone</h3>
+          <div class="alert al-red"><span class="alert-ico">⚠</span>
+            <div id="alert-settings-danger">Download PDFs before clearing!</div>
+          </div>
+          <button class="btn btn-danger" onclick="confirmClearAll()">Clear all records for this farm</button>
+        </div>
+      </div>
+    </div>
+
+    </main>
+  </div>
   </div>
 
   <div class="nav-overlay" id="overlay" onclick="toggleSidebar()"></div>
@@ -3070,7 +3113,7 @@
     function _gk(k) { return 'kuku3:' + k; }
     const LS = {
       get(k, farm = true) { try { const v = localStorage.getItem(farm ? _fk(k) : _gk(k)); return v != null ? JSON.parse(v) : null; } catch (e) { return null; } },
-      set(k, v, farm = true) { try { localStorage.setItem(farm ? _fk(k) : _gk(k), JSON.stringify(v)); } catch (e) { } syncSaved(); },
+      set(k, v, farm = true) { try { localStorage.setItem(farm ? _fk(k) : _gk(k), JSON.stringify(v)); } catch (e) { } if (farm && currentFarm) cloudSync(currentFarm.phone, k, v); syncSaved(); },
       getArr(k) { return this.get(k) || []; },
       pushArr(k, i) { const a = this.getArr(k); a.push(i); this.set(k, a); return a; }
     };
@@ -3249,8 +3292,10 @@
       // Land on Daily Record
       goto('today', document.querySelector('.nav-item'));
     }
-    function loginAs(f) {
-      currentFarm = f; LS.set('session', { phone: f.phone, ts: Date.now() }, false);
+    async function loginAs(f) {
+      currentFarm = f;
+      await cloudLoad(f.phone);
+      LS.set('session', { phone: f.phone, ts: Date.now() }, false);
       document.getElementById('brand-icon').textContent = f.logo || '🐔';
       document.getElementById('brand-name').textContent = f.name || 'Kuku Farm';
       document.getElementById('brand-sub').textContent = f.tagline || 'My farm';
@@ -3598,7 +3643,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       LS.pushArr('payments', { _id: getNextId(), cust: debtors[idx].cust, paid, channel: ch, date, type: bal <= 0 ? 'Full' : 'Partial' });
       document.getElementById('payment-history-card').style.display = 'block';
       const r = document.getElementById('payment-table').insertRow(1);
-      r.innerHTML = '<td>' + shortDate(date) + '</td><td><strong>' + escH(debtors[idx].cust) + '</strong></td><td style="color:var(--green);font-weight:700">KSh ' + paid.toLocaleString() + '</td><td>' + escH(ch) + '</td><td>' + (bal <= 0 ? '<span class="tag tg">' + t('Full') + '</span>' : '<span class="tag ta">Partial</span>') + '</td>';
+      r.innerHTML = '<td>' + shortDate(date) + '</td><td><strong>' + escH(debtors[idx].cust) + '</strong></td><td style="color:var(--green);font-weight:700">KSh ' + paid.toLocaleString() + '</td><td>' + escH(ch) + '</td><td>' + (bal <= 0 ? '<span class="tag tg">' + t('Full') + '</span>' : '<span class="tag ta">' + t('Partial') + '</span>') + '</td>';
       closeModal('payment-modal'); renderDebtorPage(); updateSidebarStats();
     }
     function openSMSModal(cust, amt, days, phone) {
@@ -3820,18 +3865,18 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       document.getElementById('vac-schedule-title').textContent = 'Vaccination Schedule — ' + batch.name;
       document.getElementById('vac-age').textContent = 'Arrived: ' + formatDate(batch.dod) + ' · Age: ' + flockAgeDays(batch.dod) + ' days (~' + flockAgeWks(batch.dod) + ' weeks) · Breed: ' + (batch.breed || 'Not specified');
       const list = computeVaccinesForBatch(batch);
-      const btnTxt = (v.status === 'missed' || v.status === 'overdue') ? t('Record late') : t('Mark given');
+      const tag = { given: '<span class="tag tg">' + t('Given ✓') + '</span>', missed: '<span class="tag tm">' + t('Missed') + '</span>', overdue: '<span class="tag tr">' + t('Overdue') + '</span>', due: '<span class="tag ta">' + t('Due now') + '</span>', upcoming: '<span class="tag ts">' + t('Upcoming') + '</span>' };
       let rows = '<tr><th>Vaccine</th><th>Target age</th><th>Due date</th><th>Method</th><th>Status</th><th>Given on / age</th><th>Action</th></tr>';
       list.forEach(v => {
         let act, givenCol;
         if (v.given) {
           const ageTxt = v.given.ageDays != null ? ' · age ' + Math.floor(v.given.ageDays / 7) + 'wk' : '';
           givenCol = '<span style="font-size:11px;color:var(--green);font-weight:700">' + shortDate(v.given.date) + ageTxt + '</span>' + (v.given.vetName ? '<br><span style="font-size:11px;color:var(--text3)">' + escH(v.given.vetName) + (v.given.vetPhone ? ' · ' + escH(v.given.vetPhone) : '') + '</span>' : '');
-          act = '<span style="font-size:11px;color:var(--green)">Recorded ✓</span>';
+          act = '<span style="font-size:11px;color:var(--green)">' + t('Recorded ✓') + '</span>';
         } else {
           givenCol = '<span style="font-size:11px;color:var(--text3)">target ~' + Math.round(v.day / 7) + 'wk</span>';
           const btnClass = (v.status === 'missed' || v.status === 'overdue') ? 'btn-danger' : 'btn-primary';
-          const btnTxt = (v.status === 'missed' || v.status === 'overdue') ? 'Record late' : 'Mark given';
+          const btnTxt = (v.status === 'missed' || v.status === 'overdue') ? t('Record late') : t('Mark given');
           act = '<button class="btn btn-sm ' + btnClass + '" onclick="openVacGivenModal(\'' + escAttr(v.name) + '\',' + batch.id + ')">' + btnTxt + '</button>';
         }
         rows += '<tr><td><strong>' + escH(vacName(v)) + '</strong></td><td>' + v.day + 'd (~' + Math.round(v.day / 7) + 'wk)</td><td>' + shortDate(v.due) + '</td><td style="font-size:12px;color:var(--text3)">' + escH(t(v.method)) + '</td><td>' + tag[v.status] + '</td><td>' + givenCol + '</td><td>' + act + '</td></tr>';
@@ -4053,7 +4098,18 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     // ════════════════════════════════════════
     // LANGUAGE
     // ════════════════════════════════════════
+    const SW = {
+      'Record late': 'Rekodi kuchelewa',
+      'Mark given': 'Weka alama imetolewa',
+      'Recorded ✓': 'Imerekodiwa ✓',
+    };
+
+    function t(str) {
+      if (getLang() !== 'sw') return str;
+      return SW[str] || str;
+    }
     function getLang() { try { return localStorage.getItem('kuku3:lang') || 'en'; } catch (e) { return 'en'; } }
+
     // Central dictionary for all JS-generated text
     const DICT = {
       // Status tags
