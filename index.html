@@ -2468,15 +2468,20 @@
                   <div
                     style="background:var(--red-bg);border-radius:var(--r);padding:13px;border:1px solid var(--red-border)">
                     <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">BAGS LEFT</div>
+                    <div id="lbl-bags-left" style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">
+                      BAGS LEFT</div>
                     <div style="font-size:30px;font-weight:800;color:var(--red)" id="feed-stock-bags">0</div>
                   </div>
                   <div
                     style="background:var(--amber-bg);border-radius:var(--r);padding:13px;border:1px solid var(--amber-border)">
                     <div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:4px">DAYS LEFT</div>
+                    <div id="lbl-days-left" style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:4px">
+                      DAYS LEFT</div>
                     <div style="font-size:30px;font-weight:800;color:var(--amber)" id="feed-days-empty">0</div>
                   </div>
                 </div>
-                <div class="prog-row"><span>Stock level</span><span id="feed-stock-label">0 bags</span></div>
+                <div class="prog-row">const btnTxt = (v.status === 'missed' || v.status === 'overdue') ? t('Record
+                  late') : t('Mark given');<span id="feed-stock-label">0 bags</span></div>
                 <div class="bar-track" style="height:10px">
                   <div class="bar-fill bar-red" id="feed-stock-bar" style="width:0%"></div>
                 </div>
@@ -3332,7 +3337,7 @@
       const recs = LS.get('dailyRecords') || {}, rec = recs[iso], daySales = LS.getArr('sales').filter(s => s.date === iso);
       if (rec) { const eggs = (rec.trays * 30) + (rec.loose || 0); document.getElementById('dm-eggs').textContent = eggs.toLocaleString(); const ft = Math.floor(eggs / 30), rm = eggs % 30; document.getElementById('dm-eggs-sub').textContent = '~' + ft + (sw ? ' trei' : ' trays') + (rm ? ' + ' + rm + (sw ? ' huru' : ' loose') : ''); document.getElementById('dm-broken').textContent = rec.broken || 0; document.getElementById('dm-broken-sub').textContent = eggs > 0 ? ((rec.broken || 0) / eggs * 100).toFixed(1) + '% breakage' : '—'; document.getElementById('dm-loose-total').textContent = rec.loose || 0; } else { ['dm-eggs', 'dm-broken', 'dm-loose-total'].forEach(id => document.getElementById(id).textContent = '—'); document.getElementById('dm-eggs-sub').textContent = sw ? 'Hakuna uzalishaji — gonga ⊕' : 'No production recorded — tap ⊕'; document.getElementById('dm-broken-sub').textContent = '—'; }
       let trays = 0, rev = 0, cash = 0, mpesa = 0, bank = 0, credit = 0;
-      const pm = { cash: '<span class="pay-badge pay-cash">Cash</span>', mpesa: '<span class="pay-badge pay-mpesa">M-Pesa</span>', bank: '<span class="pay-badge pay-bank" id="pb-lbl">Bank</span>', credit: '<span class="pay-badge pay-credit">Pay Later</span>' };
+      const pm = { cash: '<span class="pay-badge pay-cash">' + t('Cash') + '</span>', mpesa: '<span class="pay-badge pay-mpesa">M-Pesa</span>', bank: '<span class="pay-badge pay-bank" id="pb-lbl">' + t('Bank') + '</span>', credit: '<span class="pay-badge pay-credit">' + t('Pay Later') + '</span>' };
       let rows = '<tr>' + (sw ? ['Mteja', 'Trei', 'Huru', 'Kiasi', 'Malipo'] : ['Customer', 'Trays', 'Loose', 'Amount', 'Payment']).map(h => '<th>' + h + '</th>').join('') + '</tr>';
       daySales.forEach(s => { const a = s.totalAmount || 0; trays += s.trays; rev += a; if (s.pay === 'cash') cash += a; else if (s.pay === 'mpesa') mpesa += a; else if (s.pay === 'bank') bank += a; else credit += a; rows += '<tr><td><strong>' + escH(s.cust) + '</strong></td><td>' + s.trays + '</td><td>' + (s.loose || 0) + '</td><td>KSh ' + a.toLocaleString() + '</td><td>' + (s.pay === 'bank' ? '<span class="pay-badge pay-bank">🏦 ' + escH(s.bankName || 'Bank') + '</span>' : (pm[s.pay] || '')) + '</td></tr>'; });
       document.getElementById('day-cust-table').innerHTML = rows;
@@ -3381,10 +3386,10 @@
       selectPay(val);
     }
     function getPayBadge(s) {
-      if (s.pay === 'cash') return '<span class="pay-badge pay-cash">💵 Cash</span>';
+      if (s.pay === 'cash') return '<span class="pay-badge pay-cash">' + t('💵 Cash') + '</span>';
       if (s.pay === 'mpesa') return '<span class="pay-badge pay-mpesa">📱 M-Pesa</span>';
       if (s.pay === 'bank') return '<span class="pay-badge pay-bank">🏦 ' + escH(s.bankName || 'Bank') + '</span>';
-      if (s.pay === 'credit') return '<span class="pay-badge pay-credit">📋 Pay Later</span>';
+      if (s.pay === 'credit') return '<span class="pay-badge pay-credit">' + t('📋 Pay Later') + '</span>';
       return '';
     }
 
@@ -3417,7 +3422,7 @@
       const sw = getLang() === 'sw';
       let rows = '<tr><th>' + (sw ? 'Tarehe' : 'Date') + '</th><th>' + (sw ? 'Mteja' : 'Customer') + '</th><th>' + (sw ? 'Trei' : 'Trays') + '</th><th>' + (sw ? 'Huru' : 'Loose') + '</th><th>' + (sw ? 'Bei' : 'Price') + '</th><th>' + (sw ? 'Jumla' : 'Total') + '</th><th>' + (sw ? 'Malipo' : 'Payment') + '</th><th>' + (sw ? 'Hali' : 'Status') + '</th></tr>';
       const sorted = [...sales].sort((a, b) => b.date.localeCompare(a.date));
-      sorted.forEach(s => { rev += s.totalAmount || 0; trays += s.trays || 0; rows += '<tr><td>' + shortDate(s.date) + '</td><td><strong>' + escH(s.cust) + '</strong></td><td>' + s.trays + '</td><td>' + (s.loose || 0) + '</td><td>' + s.price + '</td><td>KSh ' + (s.totalAmount || 0).toLocaleString() + '</td><td>' + getPayBadge(s) + '</td><td>' + (s.status === 'pending' ? '<span class="tag ta">Pending</span>' : '<span class="tag tg">Received</span>') + '</td></tr>'; });
+      sorted.forEach(s => { rev += s.totalAmount || 0; trays += s.trays || 0; rows += '<tr><td>' + shortDate(s.date) + '</td><td><strong>' + escH(s.cust) + '</strong></td><td>' + s.trays + '</td><td>' + (s.loose || 0) + '</td><td>' + s.price + '</td><td>KSh ' + (s.totalAmount || 0).toLocaleString() + '</td><td>' + getPayBadge(s) + '</td><td>' + (s.status === 'pending' ? '<span class="tag ta">' + t('Pending') + '</span>' : '<span class="tag tg">' + t('Received') + '</span>') + '</td></tr>'; });
       document.getElementById('full-sales-table').innerHTML = rows;
       document.getElementById('sales-zero').style.display = sorted.length ? 'none' : 'block';
       document.getElementById('sales-month-rev').textContent = 'KSh ' + rev.toLocaleString();
@@ -3467,12 +3472,12 @@
       if (!sup) { showMsgBanner('f-msg', 'Enter supplier name.', 'err'); return; }
       LS.pushArr('feeds', { _id: getNextId(), date, supplier: sup, type, bags, price, total: bags * price, ot, pay });
       adjustFeedStock(bags); renderDashboard(); rebuildSupplierDatalist(); renderSupplierScores();
-      showMsgBanner('f-msg', 'Saved: ' + bags + ' bags from ' + sup + '. Stock: ' + getFeedStock() + ' bags.', 'ok');
+      showMsgBanner('f-msg', (getLang() === 'sw' ? 'Imehifadhiwa: ' + bags + ' mifuko kutoka ' + sup + '. Hisa: ' + getFeedStock() + ' mifuko.' : 'Saved: ' + bags + ' bags from ' + sup + '. Stock: ' + getFeedStock() + ' bags.'), 'ok');
     }
     function renderFeedTable() {
       const ym = getCalYM('feed-cal-month', 'feed-cal-year');
       const feeds = LS.getArr('feeds').filter(f => !ym || f.date.slice(0, 7) === ym).sort((a, b) => b.date.localeCompare(a.date));
-      const ql = { yes: '<span class="tag tg">On time ✅</span>', late: '<span class="tag ta">Late ⚠</span>', short: '<span class="tag ta">Short ⚠</span>', no: '<span class="tag tr">No ❌</span>' };
+      const ql = { yes: '<span class="tag tg">' + t('On time ✅') + '</span>', late: '<span class="tag ta">' + t('Late ⚠') + '</span>', short: '<span class="tag ta">' + t('Short ⚠') + '</span>', no: '<span class="tag tr">' + t('No ❌') + '</span>' };
       const sw = getLang() === 'sw';
       let rows = '<tr><th>' + (sw ? 'Tarehe' : 'Date') + '</th><th>' + (sw ? 'Msambazaji' : 'Supplier') + '</th><th>' + (sw ? 'Aina' : 'Type') + '</th><th>' + (sw ? 'Mifuko' : 'Bags') + '</th><th>' + (sw ? 'Bei/mfuko' : 'Price/bag') + '</th><th>' + (sw ? 'Jumla' : 'Total') + '</th><th>' + (sw ? 'Kulipwa kupitia' : 'Paid via') + '</th><th>' + (sw ? 'Uwasilishaji' : 'Delivery') + '</th></tr>';
       feeds.forEach(f => { rows += '<tr><td>' + shortDate(f.date) + '</td><td><strong>' + escH(f.supplier) + '</strong></td><td>' + escH(f.type || 'Layers mash') + '</td><td>' + f.bags + '</td><td>' + f.price.toLocaleString() + '</td><td>KSh ' + f.total.toLocaleString() + '</td><td>' + (f.pay || 'Cash') + '</td><td>' + (ql[f.ot] || '') + '</td></tr>'; });
@@ -3495,8 +3500,7 @@
       if (!amt) { showMsgBanner('e-msg', 'Enter an amount.', 'err'); return; }
       LS.pushArr('expenses', { _id: getNextId(), date, cat, amount: amt, pay, desc });
       renderExpensePage(); renderDashboard();
-      showMsgBanner('e-msg', 'Saved: ' + cat + ' — KSh ' + amt.toLocaleString() + ' via ' + pay, 'ok');
-      document.getElementById('e-amount').value = ''; document.getElementById('e-desc').value = '';
+      showMsgBanner('e-msg', (getLang() === 'sw' ? 'Imehifadhiwa: ' + cat + ' — KSh ' + amt.toLocaleString() + ' kupitia ' + pay : 'Saved: ' + cat + ' — KSh ' + amt.toLocaleString() + ' via ' + pay), 'ok'); document.getElementById('e-amount').value = ''; document.getElementById('e-desc').value = '';
     }
     function renderExpensePage() {
       const ym = getCalYM('exp-cal-month', 'exp-cal-year') || TODAY.slice(0, 7);
@@ -3566,18 +3570,18 @@
       document.getElementById('debt-total-2').textContent = 'KSh ' + total.toLocaleString(); document.getElementById('debt-count-2').textContent = active.length; document.getElementById('debt-overdue').textContent = overdue.length;
       const badge = document.getElementById('debt-badge'); if (badge) { badge.textContent = active.length; badge.style.display = active.length ? '' : 'none'; }
       const starsHtml = n => '★'.repeat(n) + '☆'.repeat(5 - n), stC = n => n >= 4 ? 'hi' : n >= 3 ? '' : ' lo';
-      const sm = { pending: '<span class="tag ta">Pending</span>', overdue: '<span class="tag tr">Overdue</span>', paid: '<span class="tag tg">Paid</span>' };
+      const sm = { pending: '<span class="tag ta">' + t('Pending') + '</span>', overdue: '<span class="tag tr">' + t('Overdue') + '</span>', paid: '<span class="tag tg">' + t('Paid') + '</span>' };
       let rows = '<tr><th>Customer</th><th>Date taken</th><th>Amount owed</th><th>Days</th><th>Rating</th><th>Status</th><th>Action</th></tr>';
       [...debtors].sort((a, b) => (b.owed || 0) - (a.owed || 0)).forEach(d => {
-        const days = daysBetween(d.date, TODAY), st = d.owed <= 0 ? 'paid' : (days > 14 ? 'overdue' : 'pending'), r = d.rating || 5; rows += '<tr><td><strong>' + escH(d.cust) + '</strong>' + (d.phone ? '<div style="font-size:11px;color:var(--text3)">' + escH(d.phone) + '</div>' : '') + `</td><td>${shortDate(d.date)}</td><td style="font-weight:700;color:${d.owed > 0 ? (days > 14 ? 'var(--red)' : 'var(--amber)') : 'var(--green)'}">KSh ${(d.owed || 0).toLocaleString()}</td><td style="color:${days > 14 ? 'var(--red)' : days > 7 ? 'var(--amber)' : 'var(--text2)'};">${days}d</td><td><span class="stars${stC(r)}">${starsHtml(r)}</span></td><td>${sm[st]}</td><td style="display:flex;gap:4px">${d.owed > 0 ? '<button class="btn btn-sm btn-primary" onclick="openPaymentModal(' + d._id + ')">Record Payment</button>' : ''}
-${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust) + '\',' + d.owed + ',' + days + ',\'' + escH(d.phone) + '\')">SMS</button>' : ''}
-<button class="btn btn-sm btn-danger" onclick="deleteDebtor(' + d._id + ')">🗑 Delete</button></td></tr>`;
+        const days = daysBetween(d.date, TODAY), st = d.owed <= 0 ? 'paid' : (days > 14 ? 'overdue' : 'pending'), r = d.rating || 5; rows += '<tr><td><strong>' + escH(d.cust) + '</strong>' + (d.phone ? '<div style="font-size:11px;color:var(--text3)">' + escH(d.phone) + '</div>' : '') + `</td><td>${shortDate(d.date)}</td><td style="font-weight:700;color:${d.owed > 0 ? (days > 14 ? 'var(--red)' : 'var(--amber)') : 'var(--green)'}">KSh ${(d.owed || 0).toLocaleString()}</td><td style="color:${days > 14 ? 'var(--red)' : days > 7 ? 'var(--amber)' : 'var(--text2)'};">${days}d</td><td><span class="stars${stC(r)}">${starsHtml(r)}</span></td><td>${sm[st]}</td><td style="display:flex;gap:4px">${d.owed > 0 ? '<button class="btn btn-sm btn-primary" onclick="openPaymentModal(' + d._id + ')">' + t('Record Payment') + '</button>' : ''}
+${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust) + '\',' + d.owed + ',' + days + ',\'' + escH(d.phone) + '\')">' + t('SMS') + '</button>' : ''}
+<button class="btn btn-sm btn-danger" onclick="deleteDebtor(${d._id})">${t('🗑 Delete')}</button></td></tr>`;
       });
       document.getElementById('debtor-table').innerHTML = rows; document.getElementById('debtors-zero').style.display = active.length ? 'none' : 'block';
       const ae = document.getElementById('debtors-alerts'); if (ae) ae.innerHTML = overdue.length ? '<div class="alert al-red"><span class="alert-ico">🚨</span><div><strong>' + overdue.length + ' customer(s) overdue 14+ days.</strong> Consider stopping supply until they pay.</div></div>' : '';
     }
     function deleteDebtor(id) {
-      if (!confirm('Delete this debt record? This cannot be undone.')) return;
+      if (!confirm(t('Delete this debt record? This cannot be undone.'))) return;
       const debtors = LS.getArr('debtors').filter(d => d._id !== id);
       LS.set('debtors', debtors);
       renderDebtorPage();
@@ -3594,30 +3598,41 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       LS.pushArr('payments', { _id: getNextId(), cust: debtors[idx].cust, paid, channel: ch, date, type: bal <= 0 ? 'Full' : 'Partial' });
       document.getElementById('payment-history-card').style.display = 'block';
       const r = document.getElementById('payment-table').insertRow(1);
-      r.innerHTML = '<td>' + shortDate(date) + '</td><td><strong>' + escH(debtors[idx].cust) + '</strong></td><td style="color:var(--green);font-weight:700">KSh ' + paid.toLocaleString() + '</td><td>' + escH(ch) + '</td><td>' + (bal <= 0 ? '<span class="tag tg">Full</span>' : '<span class="tag ta">Partial</span>') + '</td>';
+      r.innerHTML = '<td>' + shortDate(date) + '</td><td><strong>' + escH(debtors[idx].cust) + '</strong></td><td style="color:var(--green);font-weight:700">KSh ' + paid.toLocaleString() + '</td><td>' + escH(ch) + '</td><td>' + (bal <= 0 ? '<span class="tag tg">' + t('Full') + '</span>' : '<span class="tag ta">Partial</span>') + '</td>';
       closeModal('payment-modal'); renderDebtorPage(); updateSidebarStats();
     }
-    function openSMSModal(cust, amt, days, phone) { document.getElementById('sms-phone').value = phone; document.getElementById('sms-text').value = 'Dear ' + cust + ',\n\nReminder: you owe KSh ' + Number(amt).toLocaleString() + ' for eggs collected ' + days + ' days ago.\n\nPlease pay to continue receiving supply.\n\nThank you.'; openModal('sms-modal'); }
+    function openSMSModal(cust, amt, days, phone) {
+      const sw = getLang() === 'sw';
+      document.getElementById('sms-phone').value = phone;
+      document.getElementById('sms-text').value = sw
+        ? 'Mpendwa ' + cust + ',\n\nKumbusho: unadaiwa KSh ' + Number(amt).toLocaleString() + ' kwa mayai uliyochukua siku ' + days + ' zilizopita.\n\nTafadhali lipa ili uendelee kupokea mayai.\n\nAsante.'
+        : 'Dear ' + cust + ',\n\nReminder: you owe KSh ' + Number(amt).toLocaleString() + ' for eggs collected ' + days + ' days ago.\n\nPlease pay to continue receiving supply.\n\nThank you.';
+      openModal('sms-modal');
+    }
     function sendSMS() { const p = document.getElementById('sms-phone').value.trim(); if (!p) { alert('Enter phone number'); return; } const c = p.replace(/\D/g, ''), i = c.startsWith('0') ? '254' + c.slice(1) : c; window.open('sms:+' + i + '?body=' + encodeURIComponent(document.getElementById('sms-text').value), '_blank'); closeModal('sms-modal'); }
 
     // ════════════════════════════════════════
     // DASHBOARD
     // ════════════════════════════════════════
     function renderDashboard() {
+      const sw = getLang() === 'sw';
       const ym = TODAY.slice(0, 7), sales = LS.getArr('sales').filter(s => s.date && s.date.slice(0, 7) === ym), feeds = LS.getArr('feeds').filter(f => f.date && f.date.slice(0, 7) === ym), exps = LS.getArr('expenses').filter(e => e.date && e.date.slice(0, 7) === ym);
-      if (!sales.length && !feeds.length && !exps.length) { document.getElementById('pl-body').innerHTML = '<div class="zero-state" style="padding:20px 0"><div class="zi">📊</div><p>' + (getLang() === 'sw' ? 'Rekodi mauzo na matumizi kuona Faida/Hasara yako hapa.' : 'Record sales and expenses to see your P&L here.') + '</p></div>'; document.getElementById('pl-status').textContent = 'Waiting'; return; }
+      if (!sales.length && !feeds.length && !exps.length) { document.getElementById('pl-body').innerHTML = '<div class="zero-state" style="padding:20px 0"><div class="zi">📊</div><p>' + (sw ? 'Rekodi mauzo na matumizi kuona Faida/Hasara yako hapa.' : 'Record sales and expenses to see your P&L here.') + '</p></div>'; document.getElementById('pl-status').textContent = sw ? 'Inasubiri' : 'Waiting'; return; }
       let cash = 0, mpesa = 0, bank = 0, credit = 0; sales.forEach(s => { const a = s.totalAmount || 0; if (s.pay === 'cash') cash += a; else if (s.pay === 'mpesa') mpesa += a; else if (s.pay === 'bank') bank += a; else credit += a; });
       const rev = cash + mpesa + bank + credit, feedCost = feeds.reduce((t, f) => t + (f.total || 0), 0), otherCost = exps.reduce((t, e) => t + (e.amount || 0), 0), costs = feedCost + otherCost, net = rev - costs;
-      document.getElementById('pl-status').textContent = 'In progress';
+      document.getElementById('pl-status').textContent = sw ? 'Inaendelea' : 'In progress';
+      const L = sw
+        ? { cash: 'Mauzo ya taslimu', mpesa: 'Mauzo ya M-Pesa', bank: 'Mauzo ya benki', credit: 'Mauzo ya mkopo (yanasubiri)', feed: 'Ununuzi wa chakula', other: 'Matumizi mengine', net: 'Faida halisi (hadi sasa)', pay: 'Jilipe mwenyewe (20%)', save: 'Weka akiba kwa ukuaji (30%)' }
+        : { cash: 'Cash sales', mpesa: 'M-Pesa sales', bank: 'Bank sales', credit: 'Credit sales (awaiting)', feed: 'Feed purchases', other: 'Other expenses', net: 'Net profit (so far)', pay: 'Pay yourself (20%)', save: 'Save for growth (30%)' };
       document.getElementById('pl-body').innerHTML =
-        '<div class="flow-row"><span class="flow-label">Cash sales</span><span class="flow-amt flow-in">+KSh ' + cash.toLocaleString() + '</span></div>' +
-        '<div class="flow-row"><span class="flow-label">M-Pesa sales</span><span class="flow-amt flow-in">+KSh ' + mpesa.toLocaleString() + '</span></div>' +
-        '<div class="flow-row"><span class="flow-label">Bank sales</span><span class="flow-amt flow-in">+KSh ' + bank.toLocaleString() + '</span></div>' +
-        '<div class="flow-row"><span class="flow-label">Credit sales (awaiting)</span><span class="flow-amt flow-in" style="color:var(--amber)">+KSh ' + credit.toLocaleString() + '</span></div>' +
-        '<div class="flow-row"><span class="flow-label">Feed purchases</span><span class="flow-amt flow-out">−KSh ' + feedCost.toLocaleString() + '</span></div>' +
-        '<div class="flow-row"><span class="flow-label">Other expenses</span><span class="flow-amt flow-out">−KSh ' + otherCost.toLocaleString() + '</span></div>' +
-        '<div style="border-top:2px solid var(--green);margin:12px 0;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:700">Net profit (so far)</span><span style="font-size:22px;font-weight:800;color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + '">KSh ' + net.toLocaleString() + '</span></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:var(--green3);border-radius:var(--r);padding:11px;border:1px solid #b0d4b0"><div style="font-size:11px;color:var(--green);font-weight:700">Pay yourself (20%)</div><div style="font-size:18px;font-weight:800;color:var(--green)">KSh ' + Math.max(0, Math.round(net * 0.2)).toLocaleString() + '</div></div><div style="background:var(--bg3);border-radius:var(--r);padding:11px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--text3);font-weight:700">Save for growth (30%)</div><div style="font-size:18px;font-weight:800">KSh ' + Math.max(0, Math.round(net * 0.3)).toLocaleString() + '</div></div></div>';
+        '<div class="flow-row"><span class="flow-label">' + L.cash + '</span><span class="flow-amt flow-in">+KSh ' + cash.toLocaleString() + '</span></div>' +
+        '<div class="flow-row"><span class="flow-label">' + L.mpesa + '</span><span class="flow-amt flow-in">+KSh ' + mpesa.toLocaleString() + '</span></div>' +
+        '<div class="flow-row"><span class="flow-label">' + L.bank + '</span><span class="flow-amt flow-in">+KSh ' + bank.toLocaleString() + '</span></div>' +
+        '<div class="flow-row"><span class="flow-label">' + L.credit + '</span><span class="flow-amt flow-in" style="color:var(--amber)">+KSh ' + credit.toLocaleString() + '</span></div>' +
+        '<div class="flow-row"><span class="flow-label">' + L.feed + '</span><span class="flow-amt flow-out">−KSh ' + feedCost.toLocaleString() + '</span></div>' +
+        '<div class="flow-row"><span class="flow-label">' + L.other + '</span><span class="flow-amt flow-out">−KSh ' + otherCost.toLocaleString() + '</span></div>' +
+        '<div style="border-top:2px solid var(--green);margin:12px 0;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:700">' + L.net + '</span><span style="font-size:22px;font-weight:800;color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + '">KSh ' + net.toLocaleString() + '</span></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:var(--green3);border-radius:var(--r);padding:11px;border:1px solid #b0d4b0"><div style="font-size:11px;color:var(--green);font-weight:700">' + L.pay + '</div><div style="font-size:18px;font-weight:800;color:var(--green)">KSh ' + Math.max(0, Math.round(net * 0.2)).toLocaleString() + '</div></div><div style="background:var(--bg3);border-radius:var(--r);padding:11px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--text3);font-weight:700">' + L.save + '</div><div style="font-size:18px;font-weight:800">KSh ' + Math.max(0, Math.round(net * 0.3)).toLocaleString() + '</div></div></div>';
       renderProfitHistory();
     }
     function renderProfitHistory() {
@@ -3689,13 +3704,12 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const batches = getFlockBatches(), batch = batches.find(b => String(b.id) === String(batchId));
       LS.pushArr('mortality', { _id: getNextId(), date, num, cause, symptoms, vet, batchId, batchName: batch ? batch.name : 'General', ageWks });
       renderFlockMetrics();
-      showMsgBanner('m-msg', 'Recorded: ' + num + ' bird(s) — ' + cause + ' (age: ' + ageWks + 'wk)', 'ok');
-      document.getElementById('m-num').value = '1'; document.getElementById('m-age').value = ''; document.getElementById('m-symptoms').value = '';
+      showMsgBanner('m-msg', (getLang() === 'sw' ? 'Imerekodiwa: ' + num + ' ndege — ' + cause + ' (umri: ' + ageWks + 'wk)' : 'Recorded: ' + num + ' bird(s) — ' + cause + ' (age: ' + ageWks + 'wk)'), 'ok'); document.getElementById('m-num').value = '1'; document.getElementById('m-age').value = ''; document.getElementById('m-symptoms').value = '';
     }
     function renderMortTable() {
       const ym = getCalYM('mort-cal-month', 'mort-cal-year');
       const deaths = LS.getArr('mortality').filter(d => !ym || d.date.slice(0, 7) === ym).sort((a, b) => b.date.localeCompare(a.date));
-      const vm = { no: '<span class="tag ts">Not reported</span>', called: '<span class="tag ta">Reported</span>', visited: '<span class="tag tg">Vet visited</span>', treated: '<span class="tag tg">Treated</span>' };
+      const vm = { no: '<span class="tag ts">' + t('Not reported') + '</span>', called: '<span class="tag ta">' + t('Reported') + '</span>', visited: '<span class="tag tg">' + t('Vet visited') + '</span>', treated: '<span class="tag tg">' + t('Treated') + '</span>' };
       const sw = getLang() === 'sw';
       let rows = '<tr><th>' + (sw ? 'Tarehe' : 'Date') + '</th><th>' + (sw ? 'Kundi la Kuku' : 'Flock Batch') + '</th><th>' + (sw ? 'Umri (wiki)' : 'Age (wks)') + '</th><th>' + (sw ? 'Ndege' : 'Birds') + '</th><th>' + (sw ? 'Sababu' : 'Cause') + '</th><th>' + (sw ? 'Daktari' : 'Vet') + '</th></tr>';
       deaths.forEach(d => { rows += '<tr><td>' + shortDate(d.date) + '</td><td>' + escH(d.batchName || 'General') + '</td><td>' + (d.ageWks || '—') + '</td><td>' + d.num + '</td><td>' + escH(d.cause.split(' — ')[0].split(' /')[0]) + '</td><td>' + (vm[d.vet] || '') + '</td></tr>'; });
@@ -3721,10 +3735,15 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       el.insertAdjacentHTML('afterend', '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">' + allBatches.map((bn, bi) => '<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3)"><div style="width:10px;height:10px;border-radius:2px;background:' + batchColors[bi % batchColors.length] + '"></div>' + escH(bn) + '</div>').join('') + '</div>');
     }
     function generateVetReport() {
-      const num = document.getElementById('m-num').value, cause = document.getElementById('m-cause').value, sym = document.getElementById('m-symptoms').value || 'Not noted', vet = document.getElementById('m-vet').value, ageWks = document.getElementById('m-age').value || '?', farm = currentFarm ? currentFarm.name : 'My Farm';
+      const sw = getLang() === 'sw';
+      const num = document.getElementById('m-num').value, cause = document.getElementById('m-cause').value, sym = document.getElementById('m-symptoms').value || (sw ? 'Haikuandikwa' : 'Not noted'), vet = document.getElementById('m-vet').value, ageWks = document.getElementById('m-age').value || '?', farm = currentFarm ? currentFarm.name : 'My Farm';
       const batches = getFlockBatches(), batchId = document.getElementById('m-flock-batch').value, batch = batches.find(b => String(b.id) === String(batchId));
-      const vl = { no: 'Not yet reported', called: 'Reported by phone', visited: 'Vet examined birds', treated: 'Treatment administered' };
-      const rep = `POULTRY MORTALITY REPORT\nFarm: ${farm}\nDate: ${formatDate(TODAY)}\nFlock: ${batch ? batch.name + ' (' + batch.birds + ' birds, ' + (flockAgeDays(batch.dod)) + ' days old)' : 'Unknown batch'}\n\nBirds affected: ${num}\nFlock age at death: ~${ageWks} weeks\nLikely cause: ${cause}\nSymptoms: ${sym}\nVet status: ${vl[vet] || vet}\n\nPlease advise on next steps.`;
+      const vl = sw
+        ? { no: 'Haijaripotiwa bado', called: 'Imeripotiwa kwa simu', visited: 'Daktari alichunguza ndege', treated: 'Matibabu yametolewa' }
+        : { no: 'Not yet reported', called: 'Reported by phone', visited: 'Vet examined birds', treated: 'Treatment administered' };
+      const rep = sw
+        ? `RIPOTI YA VIFO VYA KUKU\nShamba: ${farm}\nTarehe: ${formatDate(TODAY)}\nKundi: ${batch ? batch.name + ' (ndege ' + batch.birds + ', siku ' + (flockAgeDays(batch.dod)) + ')' : 'Halijulikani'}\n\nNdege walioathirika: ${num}\nUmri wakati wa kifo: ~wiki ${ageWks}\nSababu inayowezekana: ${cause}\nDalili: ${sym}\nHali ya daktari: ${vl[vet] || vet}\n\nTafadhali nishauri hatua zinazofuata.`
+        : `POULTRY MORTALITY REPORT\nFarm: ${farm}\nDate: ${formatDate(TODAY)}\nFlock: ${batch ? batch.name + ' (' + batch.birds + ' birds, ' + (flockAgeDays(batch.dod)) + ' days old)' : 'Unknown batch'}\n\nBirds affected: ${num}\nFlock age at death: ~${ageWks} weeks\nLikely cause: ${cause}\nSymptoms: ${sym}\nVet status: ${vl[vet] || vet}\n\nPlease advise on next steps.`;
       document.getElementById('vet-placeholder').style.display = 'none';
       document.getElementById('vet-report').style.display = 'block'; document.getElementById('vet-report').textContent = rep;
       document.getElementById('vet-report-actions').style.display = 'block'; LS.set('last_vet_report', rep);
@@ -3735,19 +3754,20 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     // VACCINATION — MULTI-BATCH
     // ════════════════════════════════════════
     const VACCINE_SCHEDULE = [
-      { name: "Marek's disease", day: 1, note: 'At hatchery (given by supplier)', method: 'Injection' },
-      { name: 'Newcastle + Bronchitis (1st)', day: 7, note: 'Eye or nose drop', method: 'Eye/nose drop' },
-      { name: 'Gumboro — stomach disease (1st)', day: 14, note: 'In drinking water', method: 'Drinking water' },
-      { name: 'Gumboro — stomach disease (2nd)', day: 18, note: 'In drinking water', method: 'Drinking water' },
-      { name: 'Newcastle + Bronchitis (2nd)', day: 21, note: 'In drinking water', method: 'Drinking water' },
-      { name: 'Fowl pox', day: 28, note: 'Wing stab', method: 'Wing stab' },
-      { name: 'Fowl typhoid', day: 42, note: 'Injection', method: 'Injection' },
-      { name: 'Deworming (1st)', day: 56, note: '8 weeks — in drinking water', method: 'Drinking water' },
-      { name: 'Fowl pox (booster)', day: 63, note: 'Wing stab', method: 'Wing stab' },
-      { name: 'Newcastle + Bronchitis (pre-lay)', day: 112, note: '~16 weeks — before laying starts', method: 'Drinking water' },
-      { name: 'Egg Drop Syndrome (EDS)', day: 119, note: '~17 weeks', method: 'Injection' },
-      { name: 'Newcastle (laying booster)', day: 196, note: 'Repeat every ~10 weeks during laying', method: 'Drinking water' }
+      { name: "Marek's disease", nameSw: "Ugonjwa wa Marek", day: 1, note: 'At hatchery (given by supplier)', method: 'Injection' },
+      { name: 'Newcastle + Bronchitis (1st)', nameSw: 'Newcastle + Bronchitis (ya 1)', day: 7, note: 'Eye or nose drop', method: 'Eye/nose drop' },
+      { name: 'Gumboro — stomach disease (1st)', nameSw: 'Gumboro — ugonjwa wa tumbo (ya 1)', day: 14, note: 'In drinking water', method: 'Drinking water' },
+      { name: 'Gumboro — stomach disease (2nd)', nameSw: 'Gumboro — ugonjwa wa tumbo (ya 2)', day: 18, note: 'In drinking water', method: 'Drinking water' },
+      { name: 'Newcastle + Bronchitis (2nd)', nameSw: 'Newcastle + Bronchitis (ya 2)', day: 21, note: 'In drinking water', method: 'Drinking water' },
+      { name: 'Fowl pox', nameSw: 'Ndui ya kuku', day: 28, note: 'Wing stab', method: 'Wing stab' },
+      { name: 'Fowl typhoid', nameSw: 'Typhoid ya kuku', day: 42, note: 'Injection', method: 'Injection' },
+      { name: 'Deworming (1st)', nameSw: 'Kuondoa minyoo (ya 1)', day: 56, note: '8 weeks — in drinking water', method: 'Drinking water' },
+      { name: 'Fowl pox (booster)', nameSw: 'Ndui ya kuku (nyongeza)', day: 63, note: 'Wing stab', method: 'Wing stab' },
+      { name: 'Newcastle + Bronchitis (pre-lay)', nameSw: 'Newcastle + Bronchitis (kabla ya kutaga)', day: 112, note: '~16 weeks — before laying starts', method: 'Drinking water' },
+      { name: 'Egg Drop Syndrome (EDS)', nameSw: 'Kupungua kwa mayai (EDS)', day: 119, note: '~17 weeks', method: 'Injection' },
+      { name: 'Newcastle (laying booster)', nameSw: 'Newcastle (nyongeza ya kutaga)', day: 196, note: 'Repeat every ~10 weeks during laying', method: 'Drinking water' }
     ];
+    function vacName(v) { return getLang() === 'sw' ? (v.nameSw || v.name) : v.name; }
     function getVaccinesDone(batchId) { return LS.getArr('vaccines').filter(v => String(v.batchId) === String(batchId)); }
     // Classify each scheduled vaccine for a batch using its records + today's date.
     // Windows (days relative to the target due date):
@@ -3777,17 +3797,20 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const bd = document.getElementById('vac-badge'); if (bd) { bd.textContent = total; bd.style.display = total ? '' : 'none'; }
     }
     function renderVaccineReminders() {
+      const sw = getLang() === 'sw';
       const batches = getFlockBatches(), el = document.getElementById('vac-reminders'); if (!el) return;
       if (!batches.length) { el.innerHTML = ''; return; }
       let html = '';
       batches.forEach(b => {
         const list = computeVaccinesForBatch(b);
         const missed = list.filter(v => v.status === 'missed'), overdue = list.filter(v => v.status === 'overdue'), due = list.filter(v => v.status === 'due');
-        if (missed.length) html += '<div class="alert al-red" style="border-width:2px"><span class="alert-ico">🚨</span><div><strong>' + escH(b.name) + ' — ' + missed.length + ' MISSED:</strong> ' + missed.map(v => escH(v.name) + ' (was due ' + shortDate(v.due) + ', ' + Math.abs(v.daysUntil) + ' days ago)').join('; ') + '. <em>These are well past due — call your vet about a catch-up dose.</em></div></div>';
-        if (overdue.length) html += '<div class="alert al-red"><span class="alert-ico">⚠</span><div><strong>' + escH(b.name) + ' — ' + overdue.length + ' overdue:</strong> ' + overdue.map(v => escH(v.name) + ' (due ' + shortDate(v.due) + ', ' + Math.abs(v.daysUntil) + ' days late)').join('; ') + '. Give as soon as possible.</div></div>';
-        if (due.length) html += '<div class="alert al-amber"><span class="alert-ico">⏰</span><div><strong>' + escH(b.name) + ' — ' + due.length + ' due now:</strong> ' + due.map(v => escH(v.name) + ' by ' + shortDate(v.due)).join('; ') + '</div></div>';
+        if (missed.length) html += '<div class="alert al-red" style="border-width:2px"><span class="alert-ico">🚨</span><div><strong>' + escH(b.name) + ' — ' + missed.length + (sw ? ' ZILIZOKOSWA:' : ' MISSED:') + '</strong> ' + missed.map(v => escH(vacName(v)) + (sw ? ' (ilifaa ' : ' (was due ') + shortDate(v.due) + ', ' + Math.abs(v.daysUntil) + (sw ? ' siku zilizopita)' : ' days ago)')).join('; ') + (sw ? '. <em>Hizi zimepitwa sana na wakati — piga simu daktari kuhusu dozi ya kufidia.</em></div></div>' : '. <em>These are well past due — call your vet about a catch-up dose.</em></div></div>');
+        if (overdue.length) html += '<div class="alert al-red"><span class="alert-ico">⚠</span><div><strong>' + escH(b.name) + ' — ' + overdue.length + (sw ? ' zimechelewa:' : ' overdue:') + '</strong> ' + overdue.map(v => escH(vacName(v)) + (sw ? ' (ilifaa ' : ' (due ') + shortDate(v.due) + ', ' + Math.abs(v.daysUntil) + (sw ? ' siku zimechelewa)' : ' days late)')).join('; ') + (sw ? '. Toa haraka iwezekanavyo.</div></div>' : '. Give as soon as possible.</div></div>');
+        if (due.length) html += '<div class="alert al-amber"><span class="alert-ico">⏰</span><div><strong>' + escH(b.name) + ' — ' + due.length + (sw ? ' zinahitajika sasa:' : ' due now:') + '</strong> ' + due.map(v => escH(vacName(v)) + (sw ? ' ifikie ' : ' by ') + shortDate(v.due)).join('; ') + '</div></div>';
       });
-      if (!html) html = '<div class="alert al-green" style="margin:0"><span class="alert-ico">✓</span><div>All vaccinations are on track for every flock batch. Next ones are listed below.</div></div>';
+      if (!html) html = sw
+        ? '<div class="alert al-green" style="margin:0"><span class="alert-ico">✓</span><div>Chanjo zote ziko sawa kwa kila kundi la kuku. Zinazofuata zimeorodheshwa hapa chini.</div></div>'
+        : '<div class="alert al-green" style="margin:0"><span class="alert-ico">✓</span><div>All vaccinations are on track for every flock batch. Next ones are listed below.</div></div>';
       el.innerHTML = html;
     }
     function renderVaccineTable() {
@@ -3797,7 +3820,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       document.getElementById('vac-schedule-title').textContent = 'Vaccination Schedule — ' + batch.name;
       document.getElementById('vac-age').textContent = 'Arrived: ' + formatDate(batch.dod) + ' · Age: ' + flockAgeDays(batch.dod) + ' days (~' + flockAgeWks(batch.dod) + ' weeks) · Breed: ' + (batch.breed || 'Not specified');
       const list = computeVaccinesForBatch(batch);
-      const tag = { given: '<span class="tag tg">Given ✓</span>', missed: '<span class="tag tm">Missed</span>', overdue: '<span class="tag tr">Overdue</span>', due: '<span class="tag ta">Due now</span>', upcoming: '<span class="tag ts">Upcoming</span>' };
+      const btnTxt = (v.status === 'missed' || v.status === 'overdue') ? t('Record late') : t('Mark given');
       let rows = '<tr><th>Vaccine</th><th>Target age</th><th>Due date</th><th>Method</th><th>Status</th><th>Given on / age</th><th>Action</th></tr>';
       list.forEach(v => {
         let act, givenCol;
@@ -3811,30 +3834,31 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
           const btnTxt = (v.status === 'missed' || v.status === 'overdue') ? 'Record late' : 'Mark given';
           act = '<button class="btn btn-sm ' + btnClass + '" onclick="openVacGivenModal(\'' + escAttr(v.name) + '\',' + batch.id + ')">' + btnTxt + '</button>';
         }
-        rows += '<tr><td><strong>' + escH(v.name) + '</strong></td><td>' + v.day + 'd (~' + Math.round(v.day / 7) + 'wk)</td><td>' + shortDate(v.due) + '</td><td style="font-size:12px;color:var(--text3)">' + escH(v.method) + '</td><td>' + tag[v.status] + '</td><td>' + givenCol + '</td><td>' + act + '</td></tr>';
+        rows += '<tr><td><strong>' + escH(vacName(v)) + '</strong></td><td>' + v.day + 'd (~' + Math.round(v.day / 7) + 'wk)</td><td>' + shortDate(v.due) + '</td><td style="font-size:12px;color:var(--text3)">' + escH(t(v.method)) + '</td><td>' + tag[v.status] + '</td><td>' + givenCol + '</td><td>' + act + '</td></tr>';
       });
       // Custom (non-schedule) vaccines recorded for this batch
       getVaccinesDone(batch.id).filter(v => !VACCINE_SCHEDULE.find(s => s.name === v.vacName)).forEach(v => {
         const ageTxt = v.ageDays != null ? ' · age ' + Math.floor(v.ageDays / 7) + 'wk' : '';
-        rows += '<tr><td><strong>' + escH(v.vacName) + '</strong><span class="tag ts" style="margin-left:6px;font-size:10px">custom</span></td><td>Custom</td><td>' + shortDate(v.date) + '</td><td>—</td><td><span class="tag tg">Given ✓</span></td><td><span style="font-size:11px;color:var(--green);font-weight:700">' + shortDate(v.date) + ageTxt + '</span>' + (v.vetName ? '<br><span style="font-size:11px;color:var(--text3)">' + escH(v.vetName) + (v.vetPhone ? ' · ' + escH(v.vetPhone) : '') + '</span>' : '') + '</td><td>—</td></tr>';
+        rows += '<tr><td><strong>' + escH(v.vacName) + '</strong><span class="tag ts" style="margin-left:6px;font-size:10px">' + t('custom') + '</span></td><td>Custom</td><td>' + shortDate(v.date) + '</td><td>—</td><td><span class="tag tg">' + t('Given ✓') + '</span></td><td><span style="font-size:11px;color:var(--green);font-weight:700">' + shortDate(v.date) + ageTxt + '</span>' + (v.vetName ? '<br><span style="font-size:11px;color:var(--text3)">' + escH(v.vetName) + (v.vetPhone ? ' · ' + escH(v.vetPhone) : '') + '</span>' : '') + '</td><td>—</td></tr>';
       });
       document.getElementById('vac-table').innerHTML = rows;
       // AI prediction box
       renderVacPrediction(batch, list);
     }
     function renderVacPrediction(batch, list) {
+      const sw = getLang() === 'sw';
       const existing = document.getElementById('vac-prediction'); if (existing) existing.remove();
       const missed = list.filter(v => v.status === 'missed' || v.status === 'overdue');
       const upcoming = list.filter(v => v.status === 'due' || v.status === 'upcoming').slice(0, 5);
       if (!missed.length && !upcoming.length) return;
-      let inner = '<div class="alert al-blue" style="margin-top:14px;display:block"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="alert-ico">🤖</span><strong>Prediction for ' + escH(batch.name) + '</strong></div>';
+      let inner = '<div class="alert al-blue" style="margin-top:14px;display:block"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="alert-ico">🤖</span><strong>' + (sw ? 'Utabiri wa ' : 'Prediction for ') + escH(batch.name) + '</strong></div>';
       if (missed.length) {
-        inner += '<div style="font-size:13px;font-weight:700;color:var(--red);margin:8px 0 4px">Likely missed / overdue:</div><ul style="margin:0;padding-left:18px;font-size:13px">' +
-          missed.map(v => '<li style="margin-bottom:3px"><strong>' + escH(v.name) + '</strong> — should have been given by ' + shortDate(v.due) + ' (around ' + Math.round(v.day / 7) + ' weeks old), ' + Math.abs(v.daysUntil) + ' days ago</li>').join('') + '</ul>';
+        inner += '<div style="font-size:13px;font-weight:700;color:var(--red);margin:8px 0 4px">' + (sw ? 'Zinazowezekana kukoswa / kuchelewa:' : 'Likely missed / overdue:') + '</div><ul style="margin:0;padding-left:18px;font-size:13px">' +
+          missed.map(v => '<li style="margin-bottom:3px"><strong>' + escH(vacName(v)) + '</strong>' + (sw ? ' — zilifaa kutolewa ifikapo ' : ' — should have been given by ') + shortDate(v.due) + (sw ? ' (umri wapata wiki ' : ' (around ') + Math.round(v.day / 7) + (sw ? '), ' : ' weeks old), ') + Math.abs(v.daysUntil) + (sw ? ' siku zilizopita</li>' : ' days ago</li>')).join('') + '</ul>';
       }
       if (upcoming.length) {
-        inner += '<div style="font-size:13px;font-weight:700;color:var(--blue);margin:10px 0 4px">Coming up next:</div><ul style="margin:0;padding-left:18px;font-size:13px">' +
-          upcoming.map(v => { const inDays = v.daysUntil; const when = inDays <= 0 ? 'now' : 'in ' + inDays + ' day' + (inDays === 1 ? '' : 's'); return '<li style="margin-bottom:3px"><strong>' + escH(v.name) + '</strong> — ' + shortDate(v.due) + ' (' + when + ', at ~' + Math.round(v.day / 7) + ' weeks old) · ' + escH(v.method) + '</li>'; }).join('') + '</ul>';
+        inner += '<div style="font-size:13px;font-weight:700;color:var(--blue);margin:10px 0 4px">' + (sw ? 'Zinazokuja:' : 'Coming up next:') + '</div><ul style="margin:0;padding-left:18px;font-size:13px">' +
+          upcoming.map(v => { const inDays = v.daysUntil; const when = inDays <= 0 ? (sw ? 'sasa' : 'now') : (sw ? 'baada ya siku ' + inDays : 'in ' + inDays + ' day' + (inDays === 1 ? '' : 's')); return '<li style="margin-bottom:3px"><strong>' + escH(vacName(v)) + '</strong> — ' + shortDate(v.due) + ' (' + when + (sw ? ', umri wapata wiki ' : ', at ~') + Math.round(v.day / 7) + (sw ? ') · ' : ' weeks old) · ') + escH(t(v.method)) + '</li>'; }).join('') + '</ul>';
       }
       inner += '</div>';
       const pred = document.createElement('div'); pred.id = 'vac-prediction'; pred.innerHTML = inner;
@@ -3862,7 +3886,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const prevB = bsel.value;
       bsel.innerHTML = batches.map(b => '<option value="' + b.id + '">' + escH(b.name) + '</option>').join('');
       if (prevB && batches.find(b => String(b.id) === String(prevB))) bsel.value = prevB; else if (activeBatchId) bsel.value = activeBatchId;
-      tsel.innerHTML = VACCINE_SCHEDULE.map(v => '<option value="' + escAttr(v.name) + '">' + escH(v.name) + ' (~' + Math.round(v.day / 7) + 'wk)</option>').join('') + '<option value="__custom__">➕ Other / custom vaccine…</option>';
+      tsel.innerHTML = VACCINE_SCHEDULE.map(v => '<option value="' + escAttr(v.name) + '">' + escH(vacName(v)) + ' (~' + Math.round(v.day / 7) + 'wk)</option>').join('') + '<option value="__custom__">➕ Other / custom vaccine…</option>';
       const dt = document.getElementById('vrec-date'); if (dt && !dt.value) dt.value = TODAY;
       toggleVacCustom(); updateVacAgePreview();
     }
@@ -3903,7 +3927,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       renderVaccineReminders();
       updateVacBadge();
       updateVacAgePreview();
-      showMsgBanner('vac-msg', '✓ ' + name + ' recorded for ' + batch.name + ' — flock age: ' + Math.floor(ageDays / 7) + ' weeks.', 'ok');
+      showMsgBanner('vac-msg', (getLang() === 'sw' ? '✓ ' + name + ' imerekodiwa kwa ' + batch.name + ' — umri wa kundi: ' + Math.floor(ageDays / 7) + ' wiki.' : '✓ ' + name + ' recorded for ' + batch.name + ' — flock age: ' + Math.floor(ageDays / 7) + ' weeks.'), 'ok');
     }
     function renderVaccinePage() { renderFlockBatchTabs(); }
 
@@ -3918,7 +3942,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       ratings.forEach(r => { if (!scores[r.name]) scores[r.name] = { name: r.name, on: 0, total: 0, phone: r.phone || '', rating: 0, rCount: 0 }; if (r.phone) scores[r.name].phone = r.phone; scores[r.name].rating += r.rating || 0; scores[r.name].rCount++; });
       const el = document.getElementById('supplier-scores'); if (!el) return;
       const list = Object.values(scores); if (!list.length) { el.innerHTML = '<div class="zero-state" style="padding:20px 0"><div class="zi">🚚</div><p>Record purchases to see scores.</p></div>'; return; }
-      el.innerHTML = list.map(s => { const pct = s.total ? Math.round(s.on / s.total * 100) : null, starAvg = s.rCount ? Math.round(s.rating / s.rCount) : null, rc = pct != null ? (pct >= 80 ? 'hi' : pct >= 50 ? 'med' : 'lo') : (starAvg ? starAvg >= 4 ? 'hi' : starAvg >= 3 ? 'med' : 'lo' : 'med'); return '<div class="score-ring"><div class="ring ' + rc + '">' + (pct != null ? pct + '%' : starAvg ? starAvg + '★' : '?') + '</div><div style="flex:1"><div style="font-weight:700;color:var(--text)">' + escH(s.name) + '</div><div style="font-size:12px;color:var(--text3)">' + (s.phone ? escH(s.phone) + ' · ' : '') + s.total + ' purchases' + (starAvg ? ' · ' + starAvg + '/5 satisfaction' : '') + '</div></div>' + (pct != null ? '<span class="tag ' + (pct >= 80 ? 'tg' : pct >= 50 ? 'ta' : 'tr') + '">' + (pct >= 80 ? 'Reliable' : pct >= 50 ? 'Mixed' : 'Avoid') + '</span>' : '') + '</div>'; }).join('');
+      el.innerHTML = list.map(s => { const pct = s.total ? Math.round(s.on / s.total * 100) : null, starAvg = s.rCount ? Math.round(s.rating / s.rCount) : null, rc = pct != null ? (pct >= 80 ? 'hi' : pct >= 50 ? 'med' : 'lo') : (starAvg ? starAvg >= 4 ? 'hi' : starAvg >= 3 ? 'med' : 'lo' : 'med'); return '<div class="score-ring"><div class="ring ' + rc + '">' + (pct != null ? pct + '%' : starAvg ? starAvg + '★' : '?') + '</div><div style="flex:1"><div style="font-weight:700;color:var(--text)">' + escH(s.name) + '</div><div style="font-size:12px;color:var(--text3)">' + (s.phone ? escH(s.phone) + ' · ' : '') + s.total + ' purchases' + (starAvg ? ' · ' + starAvg + '/5 satisfaction' : '') + '</div></div>' + (pct != null ? '<span class="tag ' + (pct >= 80 ? 'tg' : pct >= 50 ? 'ta' : 'tr') + '">' + (pct >= 80 ? t('Reliable') : pct >= 50 ? t('Mixed') : t('Avoid')) + '</span>' : '') + '</div>'; }).join('');
     }
     function saveSupplierRating() {
       const name = document.getElementById('sup-name').value.trim(), phone = document.getElementById('sup-phone').value.trim(), what = document.getElementById('sup-what').value, amount = +document.getElementById('sup-amount').value || 0, rating = +document.getElementById('sup-rating').value || 0, notes = document.getElementById('sup-notes').value.trim();
@@ -3955,19 +3979,20 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       document.getElementById('brand-name').textContent = name; document.getElementById('brand-sub').textContent = tag;
       showMsgBanner('set-msg', 'Settings saved.', 'ok');
     }
-    function confirmClearAll() { if (!confirm('This will permanently delete ALL records. Download PDFs first. Are you sure?')) return; if (!confirm('Last chance — cannot be undone. Confirm?')) return;['sales', 'feeds', 'expenses', 'mortality', 'vaccines', 'debtors', 'payments', 'dailyRecords', 'supplierRatings', 'flockBatches', '_nid', 'feedStock'].forEach(k => LS.set(k, null)); alert('All records cleared.'); initApp(); }
-
+    function confirmClearAll() { if (!confirm(t('This will permanently delete ALL records. Download PDFs first. Are you sure?'))) return; if (!confirm(t('Last chance — cannot be undone. Confirm?'))) return;['sales', 'feeds', 'expenses', 'mortality', 'vaccines', 'debtors', 'payments', 'dailyRecords', 'supplierRatings', 'flockBatches', '_nid', 'feedStock'].forEach(k => LS.set(k, null)); alert(t('All records cleared.')); initApp(); }
     // ════════════════════════════════════════
     // WHATSAPP REPORT
     // ════════════════════════════════════════
     function sendWhatsAppReport() {
+      const sw = getLang() === 'sw';
       const g = id => { const e = document.getElementById(id); return e ? e.textContent : '—'; };
       const farm = currentFarm ? currentFarm.name : 'My Farm';
-      let cl = ''; document.querySelectorAll('#day-cust-table tr:not(:first-child)').forEach(r => { const c = r.querySelectorAll('td'); if (c.length >= 4) cl += '  • ' + c[0].textContent + ': ' + c[1].textContent + ' trays — ' + c[3].textContent + '\n'; });
-      const msg = '🐔 *' + farm.toUpperCase() + ' — DAILY REPORT*\n*' + g('dash-date-label') + '*\n\n🥚 Eggs: ' + g('dm-eggs') + '\n💔 Broken: ' + g('dm-broken') + '\n📦 Trays sold: ' + g('dm-trays') + '\n💰 *Revenue: ' + g('dm-revenue') + '*\n\n💵 Cash: ' + g('dm-cash') + '\n📱 M-Pesa: ' + g('dm-mpesa') + '\n🏦 Bank: ' + g('dm-bank') + '\n📋 Credit: ' + g('dm-credit') + '\n\n*CUSTOMERS:*\n' + cl;
+      let cl = ''; document.querySelectorAll('#day-cust-table tr:not(:first-child)').forEach(r => { const c = r.querySelectorAll('td'); if (c.length >= 4) cl += '  • ' + c[0].textContent + ': ' + c[1].textContent + (sw ? ' trei — ' : ' trays — ') + c[3].textContent + '\n'; });
+      const msg = sw
+        ? '🐔 *' + farm.toUpperCase() + ' — RIPOTI YA KILA SIKU*\n*' + g('dash-date-label') + '*\n\n🥚 Mayai: ' + g('dm-eggs') + '\n💔 Yaliyovunjika: ' + g('dm-broken') + '\n📦 Trei zilizouzwa: ' + g('dm-trays') + '\n💰 *Mapato: ' + g('dm-revenue') + '*\n\n💵 Taslimu: ' + g('dm-cash') + '\n📱 M-Pesa: ' + g('dm-mpesa') + '\n🏦 Benki: ' + g('dm-bank') + '\n📋 Mkopo: ' + g('dm-credit') + '\n\n*WATEJA:*\n' + cl
+        : '🐔 *' + farm.toUpperCase() + ' — DAILY REPORT*\n*' + g('dash-date-label') + '*\n\n🥚 Eggs: ' + g('dm-eggs') + '\n💔 Broken: ' + g('dm-broken') + '\n📦 Trays sold: ' + g('dm-trays') + '\n💰 *Revenue: ' + g('dm-revenue') + '*\n\n💵 Cash: ' + g('dm-cash') + '\n📱 M-Pesa: ' + g('dm-mpesa') + '\n🏦 Bank: ' + g('dm-bank') + '\n📋 Credit: ' + g('dm-credit') + '\n\n*CUSTOMERS:*\n' + cl;
       window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
     }
-
     // ════════════════════════════════════════
     // SIDEBAR STATS
     // ════════════════════════════════════════
@@ -4004,7 +4029,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     function stepVal(id, d) { const el = document.getElementById(id); if (!el) return; el.value = Math.max(0, (+el.value || 0) + d); updateSalePreview(); }
     function escH(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     function escAttr(s) { return String(s || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
-    function showMsgBanner(id, t, ty) { const el = document.getElementById(id); if (!el) return; if (!t) { el.className = 'msg-banner'; el.textContent = ''; return; } el.textContent = (ty === 'ok' ? '✓ ' : '⚠ ') + t; el.className = 'msg-banner ' + ty; setTimeout(() => { el.className = 'msg-banner'; el.textContent = ''; }, 7000); }
+    function showMsgBanner(id, msg, ty) { const el = document.getElementById(id); if (!el) return; if (!msg) { el.className = 'msg-banner'; el.textContent = ''; return; } const out = getLang() === 'sw' ? (DICT[msg] || msg) : msg; el.textContent = (ty === 'ok' ? '✓ ' : '⚠ ') + out; el.className = 'msg-banner ' + ty; setTimeout(() => { el.className = 'msg-banner'; el.textContent = ''; }, 7000); }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
     function switchTab(el, paneId) { const parent = el.parentElement; parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); el.classList.add('active'); el.closest('.page').querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active')); const pane = document.getElementById(paneId); if (pane) pane.classList.add('active'); }
@@ -4029,7 +4054,53 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     // LANGUAGE
     // ════════════════════════════════════════
     function getLang() { try { return localStorage.getItem('kuku3:lang') || 'en'; } catch (e) { return 'en'; } }
-
+    // Central dictionary for all JS-generated text
+    const DICT = {
+      // Status tags
+      'Pending': 'Inasubiri', 'Received': 'Imepokelewa', 'Overdue': 'Imechelewa',
+      'Paid': 'Imelipwa', 'Full': 'Kamili', 'Partial': 'Sehemu',
+      'Reliable': 'Wa kuaminika', 'Mixed': 'Mchanganyiko', 'Avoid': 'Epuka',
+      'Waiting': 'Inasubiri', 'In progress': 'Inaendelea',
+      'Injection': 'Sindano', 'Eye/nose drop': 'Tone la jicho/pua', 'Drinking water': 'Maji ya kunywa', 'Wing stab': 'Chomo la bawa',
+      'This will permanently delete ALL records. Download PDFs first. Are you sure?': 'Hii itafuta rekodi ZOTE kabisa. Pakua PDF kwanza. Una uhakika?',
+      'Last chance — cannot be undone. Confirm?': 'Nafasi ya mwisho — haiwezi kutenduliwa. Thibitisha?',
+      'All records cleared.': 'Rekodi zote zimefutwa.',
+      '💵 Cash': '💵 Taslimu',
+      '📋 Pay Later': '📋 Lipa Baadaye',
+      'Cash': 'Taslimu',
+      'Pay Later': 'Lipa Baadaye',
+      'Bank': 'Benki',
+      // Buttons
+      'Record Payment': 'Rekodi Malipo', 'SMS': 'SMS', '🗑 Delete': '🗑 Futa',
+      'Mark given': 'Weka imetolewa', 'Record late': 'Rekodi kwa kuchelewa',
+      'Recorded ✓': 'Imerekodiwa ✓',
+      // Vaccine statuses
+      'Given ✓': 'Imetolewa ✓', 'Missed': 'Imekoswa', 'Due now': 'Inahitajika sasa',
+      'Upcoming': 'Inayokuja', 'custom': 'maalum',
+      // Feed delivery
+      'On time ✅': 'Kwa wakati ✅', 'Late ⚠': 'Imechelewa ⚠',
+      'Short ⚠': 'Pungufu ⚠', 'No ❌': 'Hakuwasilisha ❌',
+      // Mortality vet status
+      'Not reported': 'Haijaripotiwa', 'Reported': 'Imeripotiwa',
+      'Vet visited': 'Daktari alitembelea', 'Treated': 'Imetibiwa',
+      // Static labels
+      'Danger Zone': 'Eneo la Hatari', 'BAGS LEFT': 'MIFUKO ILIYOBAKI',
+      'DAYS LEFT': 'SIKU ZILIZOBAKI', '✓ Saved': '✓ Imehifadhiwa',
+      'Started: ': 'Ilianza: ', ' across ': ' kwenye ', ' batch(es)': ' kundi(makundi)',
+      // Common messages
+      'Enter customer name.': 'Andika jina la mteja.',
+      'Enter trays or loose eggs.': 'Andika trei au mayai huru.',
+      'Enter price per tray.': 'Andika bei kwa trei.',
+      'Enter number of bags.': 'Andika idadi ya mifuko.',
+      'Enter price per bag.': 'Andika bei kwa mfuko.',
+      'Enter supplier name.': 'Andika jina la msambazaji.',
+      'Enter an amount.': 'Andika kiasi.',
+      'Enter number of birds.': 'Andika idadi ya ndege.',
+      'Phone number is required.': 'Nambari ya simu inahitajika.',
+      'Settings saved.': 'Mipangilio imehifadhiwa.',
+      'Enter farm name.': 'Andika jina la shamba.'
+    };
+    function t(en) { return getLang() === 'sw' ? (DICT[en] || en) : en; }
     function setLang(l) {
       try { localStorage.setItem('kuku3:lang', l); } catch (e) { }
       applyLangUI();
@@ -4046,6 +4117,8 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         else if (pid === 'feeds') renderFeedTable();
         else if (pid === 'flock') renderMortTable();
         else if (pid === 'suppliers') renderSupplierLog();
+        else if (pid === 'debtors') renderDebtorPage();
+        else if (pid === 'vaccines') renderVaccinePage();
       }
     }
 
@@ -4332,6 +4405,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         'Usual price per tray (KSh)': 'Bei ya kawaida kwa tray (KSh)',
         'Save Settings': 'Hifadhi Mipangilio',
         'Export Records': 'Hamisha Rekodi',
+        'Danger Zone': 'Eneo la Hatari',
         '⬇ Sales PDF': '⬇ PDF ya Mauzo',
         '⬇ Debtors PDF': '⬇ PDF ya Wadeni',
         '⬇ Feed Purchases PDF': '⬇ PDF ya Chakula',
@@ -4545,7 +4619,12 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         el.dataset.en = t.en;
         el.innerHTML = sw ? t.sw : t.en;
       });
-
+      // Static feed-stock labels
+      [
+        ['lbl-bags-left', sw ? 'MIFUKO ILIYOBAKI' : 'BAGS LEFT'],
+        ['lbl-days-left', sw ? 'SIKU ZILIZOBAKI' : 'DAYS LEFT'],
+        ['lbl-stock-level', sw ? 'Kiwango cha hisa' : 'Stock level']
+      ].forEach(([id, txt]) => { const el = document.getElementById(id); if (el) el.textContent = txt; });
       // ── Total: inline label ──
       const totalLabel = document.getElementById('sale-total-label');
       if (totalLabel) {
