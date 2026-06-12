@@ -3292,7 +3292,7 @@
       }
     }
 
-    function setupStep3Next() {
+    async function setupStep3Next() {
       const phone = document.getElementById('cf-phone').value.trim();
       const pin = document.getElementById('cf-pin').value.trim();
       const pin2 = document.getElementById('cf-pin2').value.trim();
@@ -3300,7 +3300,7 @@
       if (phone.length < 9) { err.textContent = 'Enter a valid phone number.'; return; }
       if (pin.length < 4) { err.textContent = 'PIN must be exactly 4 digits.'; return; }
       if (pin !== pin2) { err.textContent = 'PINs do not match. Please re-enter.'; return; }
-      const farms = getFarms();
+      const farms = await getFarms();
       if (farms.find(f => f.phone === phone)) { err.textContent = 'This phone number already has a farm. Sign in instead.'; return; }
       err.textContent = '';
       // Build review
@@ -4131,12 +4131,12 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     // ════════════════════════════════════════
     // SETTINGS
     // ════════════════════════════════════════
-    function saveFarmSettings() {
+    async function saveFarmSettings() {
       if (!currentFarm) return;
       const name = document.getElementById('set-name').value.trim(), tag = document.getElementById('set-tag').value.trim(), pprice = +document.getElementById('set-pprice').value || 430;
       if (!name) { showMsgBanner('set-msg', 'Enter farm name.', 'err'); return; }
       Object.assign(currentFarm, { name, tagline: tag, pprice });
-      const farms = getFarms(), idx = farms.findIndex(f => f.phone === currentFarm.phone); if (idx >= 0) farms[idx] = currentFarm; LS.set('farms', farms, false);
+      const farms = await getFarms(), idx = farms.findIndex(f => f.phone === currentFarm.phone); if (idx >= 0) farms[idx] = currentFarm; LS.set('farms', farms, false);
       cloudSyncFarm(currentFarm); // cloud sync
       document.getElementById('brand-name').textContent = name; document.getElementById('brand-sub').textContent = tag;
       showMsgBanner('set-msg', 'Settings saved.', 'ok');
@@ -4151,7 +4151,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       if (!/^[0-9]{4}$/.test(np)) { showMsgBanner('set-pin-msg', 'New PIN must be exactly 4 digits.', 'err'); return; }
       if (np !== np2) { showMsgBanner('set-pin-msg', 'New PINs do not match.', 'err'); return; }
       currentFarm.pinHash = await hashPin(np);
-      const farms = getFarms(), idx = farms.findIndex(f => f.phone === currentFarm.phone);
+      const farms = await getFarms(), idx = farms.findIndex(f => f.phone === currentFarm.phone);
       if (idx >= 0) farms[idx] = currentFarm;
       LS.set('farms', farms, false);
       document.getElementById('set-cur-pin').value = '';
@@ -4896,10 +4896,17 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     // ════════════════════════════════════════
     // AUTO RESTORE SESSION
     // ════════════════════════════════════════
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       applyLangUI();
       const session = LS.get('session', false);
-      if (session && session.phone) { const f = getFarms().find(x => x.phone === session.phone); if (f) { loginAs(f); return; } }
+      if (session && session.phone) {
+        const f = (await getFarms()).find(x => x.phone === session.phone);
+        if (f) { loginAs(f); return; }
+      }
+    });
+    applyLangUI();
+    const session = LS.get('session', false);
+    if (session && session.phone) { const f = getFarms().find(x => x.phone === session.phone); if (f) { loginAs(f); return; } }
     });
   </script>
   <link rel="manifest" href="manifest.json">
