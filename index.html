@@ -1794,6 +1794,12 @@
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
     }
+    async function fetchCloudProfile(phone) {
+      try {
+        const snap = await db.collection('farms').doc(phone).collection('meta').doc('profile').get();
+        return snap.exists ? snap.data() : null;
+      } catch (e) { console.log('Profile fetch failed:', e); return null; }
+    }
 
     async function cloudLoad(phone) {
       try {
@@ -3202,7 +3208,33 @@
     // AUTH & FARM
     // ════════════════════════════════════════
     async function getFarms() { let f = LS.get('farms', false); if (!f) { f = [{ phone: '0700000000', pinHash: await hashPin('1234'), name: 'Demo Farm', tagline: 'Nakuru County', logo: '🐔', color: '#1a6b1a', pprice: 430, demo: true }]; LS.set('farms', f, false); } return f; }
-    async function doLogin() { const u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pin').value.trim(); const inputHash = await hashPin(p); const f = (await getFarms()).find(x => x.phone === u && x.pinHash === inputHash); if (f) loginAs(f); else document.getElementById('login-err').textContent = 'Wrong phone or PIN. Demo: 0700000000 / 1234'; }
+    async function doLogin() {
+      const u = document.getElementById('login-user').value.trim();
+      const p = document.getElementById('login-pin').value.trim();
+      const errEl = document.getElementById('login-err');
+      const inputHash = await hashPin(p);
+
+      // 1) Try this device first
+      let f = (await getFarms()).find(x => x.phone === u && x.pinHash === inputHash);
+
+      // 2) If the phone isn't known on this device, try the cloud (new-phone recovery)
+      if (!f) {
+        const knownLocally = (await getFarms()).find(x => x.phone === u);
+        if (!knownLocally) {
+          errEl.textContent = 'Checking…';
+          const profile = await fetchCloudProfile(u);
+          if (profile && profile.pinHash === inputHash) {
+            const farms = await getFarms();
+            farms.push(profile);
+            LS.set('farms', farms, false);
+            f = profile;
+          }
+        }
+      }
+
+      if (f) { errEl.textContent = ''; loginAs(f); }
+      else errEl.textContent = 'Wrong phone or PIN. Demo: 0700000000 / 1234';
+    } const u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pin').value.trim(); const inputHash = await hashPin(p); const f = (await getFarms()).find(x => x.phone === u && x.pinHash === inputHash); if (f) loginAs(f); else document.getElementById('login-err').textContent = 'Wrong phone or PIN. Demo: 0700000000 / 1234'; }
     function showCreateView() { document.getElementById('signin-view').style.display = 'none'; document.getElementById('create-view').style.display = 'block'; setupStep = 1; renderSetupDots(); showStep(1); }
     function showSigninView() { document.getElementById('create-view').style.display = 'none'; document.getElementById('signin-view').style.display = 'block'; }
     let setupStep = 1;
