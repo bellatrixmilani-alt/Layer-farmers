@@ -3633,7 +3633,13 @@
     function getFeedStock() { const v = LS.get('feedStock'); return v == null ? 0 : v; }
     function adjustFeedStock(delta) { let v = Math.max(0, getFeedStock() + delta); LS.set('feedStock', v); renderFeedStock(); }
     function renderFeedStock() {
-      const v = getFeedStock(), batches = LS.getArr('flockBatches'), totalBirds = batches.reduce((s, b) => s + (b.birds || 0), 0) || 500, bpd = Math.max(1, Math.round(totalBirds / 500)), days = bpd > 0 ? Math.round(v / bpd) : 0;
+      const v = getFeedStock(), batches = LS.getArr('flockBatches'), totalBirds = batches.reduce((s, b) => s + (b.birds || 0), 0) || 500;
+      // Bags used per day = average from recent daily records; fall back to a birds-based estimate
+      const recs = LS.get('dailyRecords') || {};
+      const recentUsed = Object.keys(recs).sort().slice(-14).map(k => recs[k].feedUsed || 0).filter(n => n > 0);
+      const avgUsed = recentUsed.length ? recentUsed.reduce((s, n) => s + n, 0) / recentUsed.length : 0;
+      const bpd = avgUsed > 0 ? avgUsed : Math.max(1, Math.round(totalBirds / 500));
+      const days = bpd > 0 ? Math.round(v / bpd) : 0;
       document.getElementById('feed-stock-bags').textContent = v; document.getElementById('feed-days-empty').textContent = days; document.getElementById('sb-feed-days').textContent = days;
       document.getElementById('feed-stock-label').textContent = v + ' bags remaining';
       const el = document.getElementById('sb-feed-days'); if (el) el.className = 'v' + (days <= 4 ? ' danger' : days <= 14 ? ' warn' : '');
@@ -3798,7 +3804,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const ym = TODAY.slice(0, 7), sales = LS.getArr('sales').filter(s => s.date && s.date.slice(0, 7) === ym), feeds = LS.getArr('feeds').filter(f => f.date && f.date.slice(0, 7) === ym), exps = LS.getArr('expenses').filter(e => e.date && e.date.slice(0, 7) === ym);
       if (!sales.length && !feeds.length && !exps.length) { document.getElementById('pl-body').innerHTML = '<div class="zero-state" style="padding:20px 0"><div class="zi">📊</div><p>' + (sw ? 'Rekodi mauzo na matumizi kuona Faida/Hasara yako hapa.' : 'Record sales and expenses to see your P&L here.') + '</p></div>'; document.getElementById('pl-status').textContent = sw ? 'Inasubiri' : 'Waiting'; return; }
       let cash = 0, mpesa = 0, bank = 0, credit = 0; sales.forEach(s => { const a = s.totalAmount || 0; if (s.pay === 'cash') cash += a; else if (s.pay === 'mpesa') mpesa += a; else if (s.pay === 'bank') bank += a; else credit += a; });
-      const rev = cash + mpesa + bank + credit, feedCost = feeds.reduce((t, f) => t + (f.total || 0), 0), otherCost = exps.reduce((t, e) => t + (e.amount || 0), 0), costs = feedCost + otherCost, net = rev - costs;
+      const received = cash + mpesa + bank, rev = received + credit, feedCost = feeds.reduce((t, f) => t + (f.total || 0), 0), otherCost = exps.reduce((t, e) => t + (e.amount || 0), 0), costs = feedCost + otherCost, net = received - costs; feedCost = feeds.reduce((t, f) => t + (f.total || 0), 0), otherCost = exps.reduce((t, e) => t + (e.amount || 0), 0), costs = feedCost + otherCost, net = rev - costs;
       document.getElementById('pl-status').textContent = sw ? 'Inaendelea' : 'In progress';
       const L = sw
         ? { cash: 'Mauzo ya taslimu', mpesa: 'Mauzo ya M-Pesa', bank: 'Mauzo ya benki', credit: 'Mauzo ya mkopo (yanasubiri)', feed: 'Ununuzi wa chakula', other: 'Matumizi mengine', net: 'Faida halisi (hadi sasa)', pay: 'Jilipe mwenyewe (20%)', save: 'Weka akiba kwa ukuaji (30%)' }
@@ -3886,8 +3892,26 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const ym = TODAY.slice(0, 7), md = deaths.filter(d => d.date && d.date.slice(0, 7) === ym).reduce((s, d) => s + (d.num || 0), 0);
       document.getElementById('f-mort-month').textContent = md;
       const recs = LS.get('dailyRecords') || {}, tr = recs[TODAY];
-      if (tr && live > 0) { const eggs = (tr.trays * 30) + (tr.loose || 0); document.getElementById('f-lay-rate').textContent = Math.round(eggs / live * 100) + '%'; } else document.getElementById('f-lay-rate').textContent = '—';
-      if (batches.length) { const b = batches[0]; const ageDays = flockAgeDays(b.dod); document.getElementById('f-age-wks').textContent = Math.floor(ageDays / 7) + ' wks'; document.getElementById('f-age-days').textContent = ageDays + ' days (' + escH(b.name) + ')'; } else { document.getElementById('f-age-wks').textContent = '—'; document.getElementById('f-age-days').textContent = (getLang() === 'sw' ? 'Ongeza kundi la kuku kwenye Chanjo' : 'Add a flock batch in Vaccination'); }
+      // Only count birds old enough to lay (~18 weeks / 126 days)
+      const layingBirds = batches.reduce((s, b) => {
+        if (flockAgeDays(b.dod) < 126) return s;
+        const bd = deaths.filter(x => String(x.batchId) === String(b.id)).reduce((sum, x) => sum + (x.num || 0), 0);
+        return s + Math.max(0, (b.birds || 0) - bd);
+      }, 0);
+      if (tr && layingBirds > 0) { const eggs = (tr.trays * 30) + (tr.loose || 0); document.getElementById('f-lay-rate').textContent = Math.round(eggs / layingBirds * 100) + '%'; } else document.getElementById('f-lay-rate').textContent = '—';
+      if (batches.length === 1) {
+        const b = batches[0]; const ageDays = flockAgeDays(b.dod);
+        document.getElementById('f-age-wks').textContent = Math.floor(ageDays / 7) + ' wks';
+        document.getElementById('f-age-days').textContent = ageDays + ' days (' + escH(b.name) + ')';
+      } else if (batches.length > 1) {
+        const wks = batches.map(b => flockAgeWks(b.dod));
+        const minW = Math.min(...wks), maxW = Math.max(...wks);
+        document.getElementById('f-age-wks').textContent = (minW === maxW ? minW : minW + '–' + maxW) + ' wks';
+        document.getElementById('f-age-days').textContent = (getLang() === 'sw' ? batches.length + ' makundi' : batches.length + ' batches');
+      } else {
+        document.getElementById('f-age-wks').textContent = '—';
+        document.getElementById('f-age-days').textContent = (getLang() === 'sw' ? 'Ongeza kundi la kuku kwenye Chanjo' : 'Add a flock batch in Vaccination');
+      }
       renderMortTable(); renderMortChart(); updateVacBadge();
     }
     function addMortality() {
