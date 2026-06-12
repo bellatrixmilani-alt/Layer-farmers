@@ -2361,7 +2361,7 @@
             <div class="card">
               <h2>Expenses Summary</h2>
               <div style="font-size:28px;font-weight:800;color:var(--red)" id="exp-month-total">KSh 0</div>
-              <div style="font-size:12px;color:var(--text3);margin-top:4px;margin-bottom:12px">Total this month
+              <div style="font-size:12px;color:var(--text3);margin-top:4px;margin-bottom:12px" id="exp-total-label">Total this month
               </div>
               <div id="exp-by-category"></div>
             </div>
@@ -2416,7 +2416,7 @@
           </div>
           <div class="card g1">
             <h2>Monthly Profit History</h2>
-            <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Completed months only.</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:8px" id="profit-hist-note">Completed months only.</div>
             <div class="bars2" id="profit-bars">
               <div style="font-size:13px;color:var(--text3);align-self:center;width:100%;text-align:center">No
                 completed
@@ -2602,6 +2602,10 @@
               <div class="val" id="f-age-wks">—</div>
               <div class="sub" id="f-age-days">—</div>
             </div>
+          </div>
+          <div class="card g1" id="batch-breakdown-card" style="display:none">
+            <h2 id="batch-breakdown-title">Birds Alive by Batch</h2>
+            <div id="batch-breakdown"></div>
           </div>
           <div class="g2">
             <div class="card">
@@ -2878,6 +2882,20 @@
               <div class="msg-banner" id="set-pin-msg"></div>
             </div>
             <div class="card">
+              <h2>Money Accounts</h2>
+              <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter the money you currently have in each account. The app adds your sales and subtracts your purchases automatically, and blocks a purchase when the money isn't there.</div>
+              <div class="form-row">
+                <div class="form-group"><label>Cash on hand (KSh)</label><input type="number" id="ob-cash" inputmode="numeric" placeholder="0" /></div>
+                <div class="form-group"><label>M-Pesa balance (KSh)</label><input type="number" id="ob-mpesa" inputmode="numeric" placeholder="0" /></div>
+              </div>
+              <div class="form-group"><label>Bank balance (KSh)</label><input type="number" id="ob-bank" inputmode="numeric" placeholder="0" /></div>
+              <div class="form-actions"><button class="btn btn-primary" onclick="saveOpeningBalances()">Save Starting Balances</button></div>
+              <div class="msg-banner" id="ob-msg"></div>
+              <div class="sep"></div>
+              <h3>Current balances</h3>
+              <div id="acct-balances" style="font-size:14px"></div>
+            </div>
+            <div class="card">
               <h2>Export Records</h2>
               <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Download records as PDF — useful for
                 bank loan applications and vet visits.</div>
@@ -3081,7 +3099,7 @@
     const BANK_COLORS = { 'Cash': '#1a6b1a', 'M-Pesa': '#005f2f', 'Equity Bank': '#1557a0', 'KCB Bank': '#c0392b', 'Co-operative Bank': '#6b21a8', 'Absa Bank': '#c2410c', 'NCBA Bank': '#b86b00', 'Family Bank': '#0f766e' };
     let currentFarm = null, _syncT = null, appReady = false;
 
-    const BACKUP_KEYS = ['sales', 'feeds', 'expenses', 'mortality', 'vaccines', 'debtors', 'payments', 'dailyRecords', 'supplierRatings', 'flockBatches', '_nid', 'feedStock'];
+    const BACKUP_KEYS = ['sales', 'feeds', 'expenses', 'mortality', 'vaccines', 'debtors', 'payments', 'dailyRecords', 'supplierRatings', 'flockBatches', '_nid', 'feedStock', 'openingBalances'];
 
     function exportBackup() {
       if (!currentFarm) { alert('Sign in first.'); return; }
@@ -3468,12 +3486,12 @@
       const _thisSale = trays * 30 + loose;
       const _available = getEggStock();
       if (_thisSale > _available) {
-        const _short = _thisSale - _available;
         const _availTrays = Math.floor(_available / 30), _availLoose = _available % 30;
         const _msg = _sw
-          ? 'Onyo: Una trei ' + _availTrays + (_availLoose ? ' + mayai ' + _availLoose : '') + ' tu kwenye hisa (mayai ' + _available + '). Unauza zaidi kwa mayai ' + _short + '. Je, unataka kuendelea?'
-          : 'Warning: you only have ' + _availTrays + ' trays' + (_availLoose ? ' + ' + _availLoose + ' eggs' : '') + ' left in stock (' + _available + ' eggs). You are selling ' + _short + ' eggs more than that. Continue anyway?';
-        if (!confirm(_msg)) return;
+          ? 'Huwezi kuuza zaidi ya hisa. Una trei ' + _availTrays + (_availLoose ? ' + mayai ' + _availLoose : '') + ' tu (mayai ' + _available + '). Rekodi ukusanyaji zaidi kwanza.'
+          : 'Cannot sell more than stock. You only have ' + _availTrays + ' trays' + (_availLoose ? ' + ' + _availLoose + ' eggs' : '') + ' left (' + _available + ' eggs). Record more collection first.';
+        showMsgBanner('s-msg', _msg, 'err');
+        return;
       }
       const total = trays * price + Math.round(loose / 30 * price);
       const sale = { _id: getNextId(), date, cust, trays, loose, price, pay, bankName: pay === 'bank' ? bankName : '', totalAmount: total, status: pay === 'credit' ? 'pending' : 'received' };
@@ -3484,6 +3502,13 @@
       clearSaleForm();
     }
     function clearSaleForm() { document.getElementById('s-cust').value = ''; document.getElementById('s-trays').value = '10'; document.getElementById('s-loose').value = '0'; selectPay('cash'); updateSalePreview(); }
+    function deleteSale(id) {
+      if (!confirm(getLang() === 'sw' ? 'Futa mauzo haya? Haiwezi kutenduliwa.' : 'Delete this sale? This cannot be undone.')) return;
+      LS.set('sales', LS.getArr('sales').filter(s => s._id !== id));
+      LS.set('debtors', LS.getArr('debtors').filter(d => !(d.addedFrom === 'sale' && d._id === id)));
+      renderSalesPage(); renderDebtorPage(); renderDashboard(); updateSidebarStats();
+      const dp = document.getElementById('dash-date-picker'); if (dp && dp.value) loadDateRecords(dp.value);
+    }
 
     function renderSalesPage() {
       const ym = getCalYM('sales-cal-month', 'sales-cal-year') || TODAY.slice(0, 7);
@@ -3493,7 +3518,7 @@
       const sw = getLang() === 'sw';
       let rows = '<tr><th>' + (sw ? 'Tarehe' : 'Date') + '</th><th>' + (sw ? 'Mteja' : 'Customer') + '</th><th>' + (sw ? 'Trei' : 'Trays') + '</th><th>' + (sw ? 'Huru' : 'Loose') + '</th><th>' + (sw ? 'Bei' : 'Price') + '</th><th>' + (sw ? 'Jumla' : 'Total') + '</th><th>' + (sw ? 'Malipo' : 'Payment') + '</th><th>' + (sw ? 'Hali' : 'Status') + '</th></tr>';
       const sorted = [...sales].sort((a, b) => b.date.localeCompare(a.date));
-      sorted.forEach(s => { rev += s.totalAmount || 0; trays += s.trays || 0; rows += '<tr><td>' + shortDate(s.date) + '</td><td><strong>' + escH(s.cust) + '</strong></td><td>' + s.trays + '</td><td>' + (s.loose || 0) + '</td><td>' + s.price + '</td><td>KSh ' + (s.totalAmount || 0).toLocaleString() + '</td><td>' + getPayBadge(s) + '</td><td>' + (s.status === 'pending' ? '<span class="tag ta">' + t('Pending') + '</span>' : '<span class="tag tg">' + t('Received') + '</span>') + '</td></tr>'; });
+      sorted.forEach(s => { rev += s.totalAmount || 0; trays += s.trays || 0; rows += '<tr><td>' + shortDate(s.date) + '</td><td><strong>' + escH(s.cust) + '</strong></td><td>' + s.trays + '</td><td>' + (s.loose || 0) + '</td><td>' + s.price + '</td><td>KSh ' + (s.totalAmount || 0).toLocaleString() + '</td><td>' + getPayBadge(s) + '</td><td>' + (s.status === 'pending' ? '<span class="tag ta">' + t('Pending') + '</span>' : '<span class="tag tg">' + t('Received') + '</span>') + '</td><td><button class="btn btn-sm btn-danger" onclick="deleteSale(' + s._id + ')">' + (getLang() === 'sw' ? 'Futa' : 'Delete') + '</button></td></tr>'; });
       document.getElementById('full-sales-table').innerHTML = rows;
       document.getElementById('sales-zero').style.display = sorted.length ? 'none' : 'block';
       document.getElementById('sales-month-rev').textContent = 'KSh ' + rev.toLocaleString();
@@ -3541,6 +3566,8 @@
       if (!bags) { showMsgBanner('f-msg', 'Enter number of bags.', 'err'); return; }
       if (!price) { showMsgBanner('f-msg', 'Enter price per bag.', 'err'); return; }
       if (!sup) { showMsgBanner('f-msg', 'Enter supplier name.', 'err'); return; }
+      const _total = bags * price, _acct = acctKey(pay);
+      if (_acct) { const _bal = getAccountBalance(_acct); if (_total > _bal) { showMsgBanner('f-msg', (getLang() === 'sw' ? 'Pesa haitoshi kwenye ' + acctLabel(_acct) + '. Una KSh ' + _bal.toLocaleString() + ' lakini ununuzi huu ni KSh ' + _total.toLocaleString() + '.' : 'Not enough money in ' + _acct + '. You have KSh ' + _bal.toLocaleString() + ' but this purchase costs KSh ' + _total.toLocaleString() + '.'), 'err'); return; } }
       LS.pushArr('feeds', { _id: getNextId(), date, supplier: sup, type, bags, price, total: bags * price, ot, pay });
       adjustFeedStock(bags); renderDashboard(); rebuildSupplierDatalist(); renderSupplierScores();
       showMsgBanner('f-msg', (getLang() === 'sw' ? 'Imehifadhiwa: ' + bags + ' mifuko kutoka ' + sup + '. Hisa: ' + getFeedStock() + ' mifuko.' : 'Saved: ' + bags + ' bags from ' + sup + '. Stock: ' + getFeedStock() + ' bags.'), 'ok');
@@ -3558,7 +3585,7 @@
     }
     function renderFeedPriceChart() {
       const last6 = LS.getArr('feeds').sort((a, b) => a.date.localeCompare(b.date)).slice(-6), el = document.getElementById('feed-price-bars'); if (!el) return;
-      if (!last6.length) { el.innerHTML = '<div style="font-size:13px;color:var(--text3);align-self:center;width:100%;text-align:center">Record purchases to see price trends.</div>'; return; }
+      if (!last6.length) { el.innerHTML = '<div style="font-size:13px;color:var(--text3);align-self:center;width:100%;text-align:center">' + (getLang() === 'sw' ? 'Rekodi ununuzi kuona mwenendo wa bei.' : 'Record purchases to see price trends.') + '</div>'; return; }
       const mx = Math.max(...last6.map(f => f.price)), mn = Math.min(...last6.map(f => f.price));
       el.innerHTML = last6.map(f => '<div class="bar2"><span class="bval">' + f.price.toLocaleString() + '</span><div class="bcol" style="height:' + (40 + ((f.price - mn) / (mx - mn || 1)) * 55) + '%;background:var(--blue)"></div><span class="bmon">' + shortDate(f.date) + '</span></div>').join('');
     }
@@ -3569,6 +3596,8 @@
     function addExpense() {
       const amt = +document.getElementById('e-amount').value || 0, cat = document.getElementById('e-cat').value, pay = document.getElementById('e-pay').value, desc = document.getElementById('e-desc').value.trim(), date = document.getElementById('e-date').value || TODAY;
       if (!amt) { showMsgBanner('e-msg', 'Enter an amount.', 'err'); return; }
+      const _acct = acctKey(pay);
+      if (_acct) { const _bal = getAccountBalance(_acct); if (amt > _bal) { showMsgBanner('e-msg', (getLang() === 'sw' ? 'Pesa haitoshi kwenye ' + acctLabel(_acct) + '. Una KSh ' + _bal.toLocaleString() + ' lakini matumizi haya ni KSh ' + amt.toLocaleString() + '.' : 'Not enough money in ' + _acct + '. You have KSh ' + _bal.toLocaleString() + ' but this expense is KSh ' + amt.toLocaleString() + '.'), 'err'); return; } }
       LS.pushArr('expenses', { _id: getNextId(), date, cat, amount: amt, pay, desc });
       renderExpensePage(); renderDashboard();
       showMsgBanner('e-msg', (getLang() === 'sw' ? 'Imehifadhiwa: ' + cat + ' — KSh ' + amt.toLocaleString() + ' kupitia ' + pay : 'Saved: ' + cat + ' — KSh ' + amt.toLocaleString() + ' via ' + pay), 'ok'); document.getElementById('e-amount').value = ''; document.getElementById('e-desc').value = '';
@@ -3580,7 +3609,7 @@
       filtered.forEach(e => { total += e.amount || 0; byCat[e.cat] = (byCat[e.cat] || 0) + (e.amount || 0); });
       document.getElementById('exp-month-total').textContent = 'KSh ' + total.toLocaleString();
       const bcEl = document.getElementById('exp-by-category');
-      if (bcEl) { if (!Object.keys(byCat).length) { bcEl.innerHTML = '<div style="font-size:13px;color:var(--text3)">No expenses this month.</div>'; } else { bcEl.innerHTML = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat, amt]) => '<div class="prog-row"><span>' + escH(cat) + '</span><span>KSh ' + amt.toLocaleString() + '</span></div><div class="bar-track" style="margin-bottom:8px"><div class="bar-fill bar-amber" style="width:' + Math.round(amt / (total || 1) * 100) + '%"></div></div>').join(''); } }
+      if (bcEl) { if (!Object.keys(byCat).length) { bcEl.innerHTML = '<div style="font-size:13px;color:var(--text3)">' + (getLang() === 'sw' ? 'Hakuna matumizi mwezi huu.' : 'No expenses this month.') + '</div>'; } else { bcEl.innerHTML = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat, amt]) => '<div class="prog-row"><span>' + escH(cat) + '</span><span>KSh ' + amt.toLocaleString() + '</span></div><div class="bar-track" style="margin-bottom:8px"><div class="bar-fill bar-amber" style="width:' + Math.round(amt / (total || 1) * 100) + '%"></div></div>').join(''); } }
       const calYm = getCalYM('exp-cal-month', 'exp-cal-year');
       const shown = calYm ? allExps.filter(e => e.date.slice(0, 7) === calYm) : [...allExps];
       shown.sort((a, b) => b.date.localeCompare(a.date));
@@ -3717,7 +3746,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const COLS = ['#1a6b1a', '#0f766e', '#1565c0', '#9b1c31', '#c2410c', '#6b21a8', '#374151'];
       const sw = getLang() === 'sw';
       const barsEl = document.getElementById('profit-bars'), tbl = document.getElementById('profit-table');
-      if (!months.length) { if (barsEl) barsEl.innerHTML = '<div style="font-size:13px;color:var(--text3);align-self:center;width:100%;text-align:center">No completed months yet.</div>'; if (tbl) tbl.innerHTML = '<tr><th>' + (sw ? 'Mwezi' : 'Month') + '</th><th>' + (sw ? 'Mapato' : 'Revenue') + '</th><th>' + (sw ? 'Gharama' : 'Costs') + '</th><th>' + (sw ? 'Faida' : 'Profit') + '</th></tr>'; return; }
+      if (!months.length) { if (barsEl) barsEl.innerHTML = '<div style="font-size:13px;color:var(--text3);align-self:center;width:100%;text-align:center">' + (sw ? 'Hakuna miezi iliyokamilika bado.' : 'No completed months yet.') + '</div>'; if (tbl) tbl.innerHTML = ''; return; }
       if (barsEl) barsEl.innerHTML = months.map((m, i) => { const p = profs[i], h = 35 + ((p - mn) / (mx - mn || 1)) * 60; return '<div class="bar2"><span class="bval" style="color:' + COLS[i % 7] + '">' + Math.round(p / 1000) + 'k</span><div class="bcol" style="height:' + h + '%;background:' + COLS[i % 7] + '"></div><span class="bmon">' + MONTHS_SHORT[new Date(m + '-01').getMonth()] + '</span></div>'; }).join('');
       if (tbl) { let rows = '<tr><th>' + (sw ? 'Mwezi' : 'Month') + '</th><th>' + (sw ? 'Mapato' : 'Revenue') + '</th><th>' + (sw ? 'Gharama' : 'Costs') + '</th><th>' + (sw ? 'Faida' : 'Profit') + '</th></tr>'; months.forEach((m, i) => { const p = profs[i], d = map[m]; rows += '<tr><td>' + monthName(new Date(m + '-01').getMonth()) + ' ' + m.slice(0, 4) + '</td><td style="color:var(--green)">KSh ' + d.rev.toLocaleString() + '</td><td style="color:var(--red)">KSh ' + d.cost.toLocaleString() + '</td><td style="color:' + (p >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:700">KSh ' + p.toLocaleString() + '</td></tr>'; }); tbl.innerHTML = rows; }
     }
@@ -3759,13 +3788,27 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const totalDeaths = deaths.reduce((s, d) => s + (d.num || 0), 0);
       const live = Math.max(0, totalBirds - totalDeaths);
       document.getElementById('f-live-birds').textContent = live.toLocaleString();
-      document.getElementById('f-started').textContent = 'Started: ' + totalBirds.toLocaleString() + ' across ' + batches.length + ' batch(es)';
+      document.getElementById('f-started').textContent = (getLang() === 'sw' ? 'Ilianza: ' + totalBirds.toLocaleString() + ' kwenye makundi ' + batches.length : 'Started: ' + totalBirds.toLocaleString() + ' across ' + batches.length + ' batch(es)');
       document.getElementById('sb-birds').textContent = live.toLocaleString();
+      const _bbEl = document.getElementById('batch-breakdown'), _bbCard = document.getElementById('batch-breakdown-card');
+      if (_bbEl && _bbCard) {
+        const _sw = getLang() === 'sw';
+        const _bt = document.getElementById('batch-breakdown-title'); if (_bt) _bt.textContent = _sw ? 'Ndege Hai kwa Kundi' : 'Birds Alive by Batch';
+        if (!batches.length) { _bbCard.style.display = 'none'; }
+        else {
+          _bbCard.style.display = 'block';
+          _bbEl.innerHTML = batches.map(b => {
+            const _d = deaths.filter(x => String(x.batchId) === String(b.id)).reduce((s, x) => s + (x.num || 0), 0);
+            const _alive = Math.max(0, (b.birds || 0) - _d);
+            return '<div class="flow-row"><span class="flow-label"><strong>' + escH(b.name) + '</strong> · ' + (_sw ? 'walianza ' : 'started ') + (b.birds || 0).toLocaleString() + (_d ? ' · -' + _d + (_sw ? ' vifo' : ' deaths') : '') + '</span><span class="flow-amt flow-in">' + _alive.toLocaleString() + (_sw ? ' hai' : ' alive') + '</span></div>';
+          }).join('') + '<div class="flow-row" style="border-top:2px solid var(--green)"><span class="flow-label"><strong>' + (_sw ? 'Jumla hai' : 'Total alive') + '</strong></span><span class="flow-amt flow-in"><strong>' + live.toLocaleString() + '</strong></span></div>';
+        }
+      }
       const ym = TODAY.slice(0, 7), md = deaths.filter(d => d.date && d.date.slice(0, 7) === ym).reduce((s, d) => s + (d.num || 0), 0);
       document.getElementById('f-mort-month').textContent = md;
       const recs = LS.get('dailyRecords') || {}, tr = recs[TODAY];
       if (tr && live > 0) { const eggs = (tr.trays * 30) + (tr.loose || 0); document.getElementById('f-lay-rate').textContent = Math.round(eggs / live * 100) + '%'; } else document.getElementById('f-lay-rate').textContent = '—';
-      if (batches.length) { const b = batches[0]; const ageDays = flockAgeDays(b.dod); document.getElementById('f-age-wks').textContent = Math.floor(ageDays / 7) + ' wks'; document.getElementById('f-age-days').textContent = ageDays + ' days (' + escH(b.name) + ')'; } else { document.getElementById('f-age-wks').textContent = '—'; document.getElementById('f-age-days').textContent = 'Add a flock batch in Vaccination'; }
+      if (batches.length) { const b = batches[0]; const ageDays = flockAgeDays(b.dod); document.getElementById('f-age-wks').textContent = Math.floor(ageDays / 7) + ' wks'; document.getElementById('f-age-days').textContent = ageDays + ' days (' + escH(b.name) + ')'; } else { document.getElementById('f-age-wks').textContent = '—'; document.getElementById('f-age-days').textContent = (getLang() === 'sw' ? 'Ongeza kundi la kuku kwenye Chanjo' : 'Add a flock batch in Vaccination'); }
       renderMortTable(); renderMortChart(); updateVacBadge();
     }
     function addMortality() {
@@ -3888,8 +3931,8 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const batches = getFlockBatches(); if (!batches.length) { document.getElementById('vac-schedule-card').style.display = 'none'; return; }
       document.getElementById('vac-schedule-card').style.display = 'block';
       const batch = batches.find(b => b.id === activeBatchId) || batches[0]; if (!batch) return;
-      document.getElementById('vac-schedule-title').textContent = 'Vaccination Schedule — ' + batch.name;
-      document.getElementById('vac-age').textContent = 'Arrived: ' + formatDate(batch.dod) + ' · Age: ' + flockAgeDays(batch.dod) + ' days (~' + flockAgeWks(batch.dod) + ' weeks) · Breed: ' + (batch.breed || 'Not specified');
+      document.getElementById('vac-schedule-title').textContent = (getLang() === 'sw' ? 'Ratiba ya Chanjo — ' : 'Vaccination Schedule — ') + batch.name;
+      document.getElementById('vac-age').textContent = (getLang() === 'sw' ? 'Iliwasili: ' + formatDate(batch.dod) + ' · Umri: ' + flockAgeDays(batch.dod) + ' siku (~' + flockAgeWks(batch.dod) + ' wiki) · Aina: ' + (batch.breed || 'Haijabainishwa') : 'Arrived: ' + formatDate(batch.dod) + ' · Age: ' + flockAgeDays(batch.dod) + ' days (~' + flockAgeWks(batch.dod) + ' weeks) · Breed: ' + (batch.breed || 'Not specified'));
       const list = computeVaccinesForBatch(batch);
       const tag = { given: '<span class="tag tg">' + t('Given ✓') + '</span>', missed: '<span class="tag tm">' + t('Missed') + '</span>', overdue: '<span class="tag tr">' + t('Overdue') + '</span>', due: '<span class="tag ta">' + t('Due now') + '</span>', upcoming: '<span class="tag ts">' + t('Upcoming') + '</span>' };
       let rows = '<tr><th>' + (getLang() === 'sw' ? 'Chanjo' : 'Vaccine') + '</th><th>' + (getLang() === 'sw' ? 'Umri unaolengwa' : 'Target age') + '</th><th>' + (getLang() === 'sw' ? 'Tarehe ya mwisho' : 'Due date') + '</th><th>' + (getLang() === 'sw' ? 'Njia' : 'Method') + '</th><th>' + (getLang() === 'sw' ? 'Hali' : 'Status') + '</th><th>' + (getLang() === 'sw' ? 'Ilitolewa / umri' : 'Given on / age') + '</th><th>' + (getLang() === 'sw' ? 'Kitendo' : 'Action') + '</th></tr>';
@@ -3900,7 +3943,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
           givenCol = '<span style="font-size:11px;color:var(--green);font-weight:700">' + shortDate(v.given.date) + ageTxt + '</span>' + (v.given.vetName ? '<br><span style="font-size:11px;color:var(--text3)">' + escH(v.given.vetName) + (v.given.vetPhone ? ' · ' + escH(v.given.vetPhone) : '') + '</span>' : '');
           act = '<span style="font-size:11px;color:var(--green)">' + t('Recorded ✓') + '</span>';
         } else {
-          givenCol = '<span style="font-size:11px;color:var(--text3)">target ~' + Math.round(v.day / 7) + 'wk</span>';
+          givenCol = '<span style="font-size:11px;color:var(--text3)">' + (getLang() === 'sw' ? 'lengwa ~' : 'target ~') + Math.round(v.day / 7) + 'wk</span>';
           const btnClass = (v.status === 'missed' || v.status === 'overdue') ? 'btn-danger' : 'btn-primary';
           const btnTxt = (v.status === 'missed' || v.status === 'overdue') ? t('Record late') : t('Mark given');
           act = '<button class="btn btn-sm ' + btnClass + '" onclick="openVacGivenModal(\'' + escAttr(v.name) + '\',' + batch.id + ')">' + btnTxt + '</button>';
@@ -3910,7 +3953,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       // Custom (non-schedule) vaccines recorded for this batch
       getVaccinesDone(batch.id).filter(v => !VACCINE_SCHEDULE.find(s => s.name === v.vacName)).forEach(v => {
         const ageTxt = v.ageDays != null ? ' · age ' + Math.floor(v.ageDays / 7) + 'wk' : '';
-        rows += '<tr><td><strong>' + escH(v.vacName) + '</strong><span class="tag ts" style="margin-left:6px;font-size:10px">' + t('custom') + '</span></td><td>Custom</td><td>' + shortDate(v.date) + '</td><td>—</td><td><span class="tag tg">' + t('Given ✓') + '</span></td><td><span style="font-size:11px;color:var(--green);font-weight:700">' + shortDate(v.date) + ageTxt + '</span>' + (v.vetName ? '<br><span style="font-size:11px;color:var(--text3)">' + escH(v.vetName) + (v.vetPhone ? ' · ' + escH(v.vetPhone) : '') + '</span>' : '') + '</td><td>—</td></tr>';
+        rows += '<tr><td><strong>' + escH(v.vacName) + '</strong><span class="tag ts" style="margin-left:6px;font-size:10px">' + t('custom') + '</span></td><td>' + (getLang() === 'sw' ? 'Maalum' : 'Custom') + '</td><td>' + shortDate(v.date) + '</td><td>—</td><td><span class="tag tg">' + t('Given ✓') + '</span></td><td><span style="font-size:11px;color:var(--green);font-weight:700">' + shortDate(v.date) + ageTxt + '</span>' + (v.vetName ? '<br><span style="font-size:11px;color:var(--text3)">' + escH(v.vetName) + (v.vetPhone ? ' · ' + escH(v.vetPhone) : '') + '</span>' : '') + '</td><td>—</td></tr>';
       });
       document.getElementById('vac-table').innerHTML = rows;
       // AI prediction box
@@ -4067,6 +4110,46 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       document.getElementById('set-new-pin2').value = '';
       showMsgBanner('set-pin-msg', 'PIN updated. Use your new PIN next time you sign in.', 'ok');
     }
+    function acctKey(mode) {
+      if (!mode) return null;
+      const m = String(mode).toLowerCase();
+      if (m === 'cash') return 'Cash';
+      if (m === 'mpesa' || m === 'm-pesa') return 'M-Pesa';
+      if (m === 'credit') return null;
+      if (m.indexOf('bank') >= 0) return 'Bank';
+      return null;
+    }
+    function acctLabel(acct) {
+      const sw = getLang() === 'sw';
+      if (acct === 'Cash') return sw ? 'Taslimu' : 'Cash';
+      if (acct === 'Bank') return sw ? 'Benki' : 'Bank';
+      return 'M-Pesa';
+    }
+    function getAccountBalance(acct) {
+      const opening = LS.get('openingBalances') || {};
+      let bal = +opening[acct] || 0;
+      LS.getArr('sales').forEach(s => { if (acctKey(s.pay) === acct) bal += (s.totalAmount || 0); });
+      LS.getArr('payments').forEach(p => { if (acctKey(p.channel) === acct) bal += (p.paid || 0); });
+      LS.getArr('feeds').forEach(f => { if (acctKey(f.pay) === acct) bal -= (f.total || 0); });
+      LS.getArr('expenses').forEach(e => { if (acctKey(e.pay) === acct) bal -= (e.amount || 0); });
+      return bal;
+    }
+    function saveOpeningBalances() {
+      const o = { Cash: +document.getElementById('ob-cash').value || 0, 'M-Pesa': +document.getElementById('ob-mpesa').value || 0, Bank: +document.getElementById('ob-bank').value || 0 };
+      LS.set('openingBalances', o);
+      renderAccountBalances();
+      showMsgBanner('ob-msg', getLang() === 'sw' ? 'Salio za kuanzia zimehifadhiwa.' : 'Starting balances saved.', 'ok');
+    }
+    function renderAccountBalances() {
+      const el = document.getElementById('acct-balances'); if (!el) return;
+      el.innerHTML = ['Cash', 'M-Pesa', 'Bank'].map(a => { const b = getAccountBalance(a); return '<div class="flow-row"><span class="flow-label">' + acctLabel(a) + '</span><span class="flow-amt" style="color:' + (b < 0 ? 'var(--red)' : 'var(--green)') + '">KSh ' + b.toLocaleString() + '</span></div>'; }).join('');
+    }
+    function applyOpeningBalancesInputs() {
+      const o = LS.get('openingBalances') || {};
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v == null ? '' : v); };
+      set('ob-cash', o.Cash); set('ob-mpesa', o['M-Pesa']); set('ob-bank', o.Bank);
+      renderAccountBalances();
+    }
     function confirmClearAll() { if (!confirm(t('This will permanently delete ALL records. Download PDFs first. Are you sure?'))) return; if (!confirm(t('Last chance — cannot be undone. Confirm?'))) return;['sales', 'feeds', 'expenses', 'mortality', 'vaccines', 'debtors', 'payments', 'dailyRecords', 'supplierRatings', 'flockBatches', '_nid', 'feedStock'].forEach(k => LS.set(k, null)); alert(t('All records cleared.')); initApp(); }
     // ════════════════════════════════════════
     // WHATSAPP REPORT
@@ -4131,7 +4214,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       if (id === 'dashboard') renderDashboard();
       if (id === 'flock') { renderFlockMetrics(); populateMortFlockDropdown(); }
       if (id === 'suppliers') { renderSupplierScores(); renderSupplierLog(); }
-      if (id === 'settings') applySettingsInputs();
+      if (id === 'settings') { applySettingsInputs(); applyOpeningBalancesInputs(); }
       if (id === 'sales') renderSalesPage();
       if (id === 'expenses') renderExpensePage();
       if (id === 'feeds') renderFeedStock();
@@ -4214,7 +4297,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         else if (pid === 'sales') renderSalesPage();
         else if (pid === 'expenses') renderExpensePage();
         else if (pid === 'feeds') renderFeedTable();
-        else if (pid === 'flock') renderMortTable();
+        else if (pid === 'flock') renderFlockMetrics();
         else if (pid === 'suppliers') renderSupplierLog();
         else if (pid === 'debtors') renderDebtorPage();
         else if (pid === 'vaccines') renderVaccinePage();
@@ -4363,6 +4446,8 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         // Payment methods
         '💵 Cash': sw ? '💵 Taslimu' : '💵 Cash',
         '📱 M-Pesa': '📱 M-Pesa',
+        '🏦 Bank': '🏦 Benki',
+        '📋 Pay Later': '📋 Lipa Baadaye',
         // Supplier service types
         'Layers mash / Feed bags': 'Uji wa kuku / Mifuko ya chakula',
         'Vaccines & medicines': 'Chanjo na dawa',
@@ -4431,6 +4516,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         'Monthly Summary': 'Muhtasari wa Mwezi',
         'View month:': 'Tazama mwezi:',
         'All records': 'Rekodi zote',
+        'Show': 'Onyesha',
         'Revenue shown': 'Mapato yaliyoonyeshwa',
         'Trays shown': 'Trei zilizoonyeshwa',
         '⬇ Export PDF': '⬇ Toa PDF',
@@ -4722,7 +4808,9 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       [
         ['lbl-bags-left', sw ? 'MIFUKO ILIYOBAKI' : 'BAGS LEFT'],
         ['lbl-days-left', sw ? 'SIKU ZILIZOBAKI' : 'DAYS LEFT'],
-        ['lbl-stock-level', sw ? 'Kiwango cha hisa' : 'Stock level']
+        ['lbl-stock-level', sw ? 'Kiwango cha hisa' : 'Stock level'],
+        ['exp-total-label', sw ? 'Jumla mwezi huu' : 'Total this month'],
+        ['profit-hist-note', sw ? 'Miezi iliyokamilika pekee.' : 'Completed months only.']
       ].forEach(([id, txt]) => { const el = document.getElementById(id); if (el) el.textContent = txt; });
       // ── Total: inline label ──
       const totalLabel = document.getElementById('sale-total-label');
