@@ -2540,368 +2540,377 @@
               </div>
             </div>
           </div>
-        </div>
-        <!-- Calendar for feed history -->
-        <div class="card g1" style="padding:14px 18px">
-          <div class="cal-picker">
-            <label>View month:</label>
-            <select id="feed-cal-month"></select>
-            <select id="feed-cal-year"></select>
-            <button class="cal-apply" onclick="renderFeedTable()">Show</button>
-            <button class="btn btn-sm" onclick="clearFeedCal()">All records</button>
-            <button class="btn btn-sm" onclick="exportTablePDF('feed-table','Feed Purchases')">⬇ Export
-              PDF</button>
+          <!-- Calendar for feed history -->
+          <div class="card g1" style="padding:14px 18px">
+            <div class="cal-picker">
+              <label>View month:</label>
+              <select id="feed-cal-month"></select>
+              <select id="feed-cal-year"></select>
+              <button class="cal-apply" onclick="renderFeedTable()">Show</button>
+              <button class="btn btn-sm" onclick="clearFeedCal()">All records</button>
+              <button class="btn btn-sm" onclick="exportTablePDF('feed-table','Feed Purchases')">⬇ Export
+                PDF</button>
+            </div>
+          </div>
+          <div class="card flush g1">
+            <div class="card-head">
+              <h2 style="margin:0" id="feed-log-title">Feed Purchase History</h2>
+            </div>
+            <div class="card-body" style="padding:0">
+              <div class="tbl-wrap">
+                <table id="feed-table">
+                  <tr>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>Type</th>
+                    <th>Bags</th>
+                    <th>Price/bag</th>
+                    <th>Total</th>
+                    <th>Paid via</th>
+                    <th>Delivery</th>
+                    <th></th>
+                  </tr>
+                </table>
+              </div>
+              <div id="feed-zero" class="zero-state">
+                <div class="zi">🌾</div><strong>No feed purchases recorded yet</strong>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="card flush g1">
-          <div class="card-head">
-            <h2 style="margin:0" id="feed-log-title">Feed Purchase History</h2>
+
+        <!-- ═══ FLOCK & HEALTH ═══ -->
+        <div class="page" id="page-flock">
+          <div class="g4" style="margin-bottom:14px">
+            <div class="metric">
+              <div class="lbl">Birds alive</div>
+              <div class="val green" id="f-live-birds">—</div>
+              <div class="sub" id="f-started">—</div>
+            </div>
+            <div class="metric">
+              <div class="lbl">Deaths this month</div>
+              <div class="val amber" id="f-mort-month">0</div>
+              <div class="sub">Target &lt;1%/month</div>
+            </div>
+            <div class="metric">
+              <div class="lbl">Laying rate</div>
+              <div class="val green" id="f-lay-rate">—</div>
+              <div class="sub">From today's record</div>
+            </div>
+            <div class="metric">
+              <div class="lbl">Flock age</div>
+              <div class="val" id="f-age-wks">—</div>
+              <div class="sub" id="f-age-days">—</div>
+            </div>
           </div>
-          <div class="card-body" style="padding:0">
+          <div class="g2">
+            <div class="card">
+              <h2>Record a Death</h2>
+              <div class="form-row">
+                <div class="form-group"><label>Date found</label><input type="date" id="m-date" /></div>
+                <div class="form-group"><label>Number of birds</label>
+                  <div class="stepper"><button class="stepper-btn" onclick="stepVal('m-num',-1)">−</button><input
+                      type="number" id="m-num" value="1" min="1" /><button class="stepper-btn"
+                      onclick="stepVal('m-num',1)">+</button></div>
+                </div>
+              </div>
+              <div class="form-group"><label>Flock batch (which birds?)</label>
+                <select id="m-flock-batch"></select>
+              </div>
+              <div class="form-group"><label>Flock age at death (weeks)</label><input type="number" id="m-age"
+                  placeholder="e.g. 32" inputmode="numeric" min="1" /></div>
+              <div class="form-group"><label>Likely cause</label>
+                <select id="m-cause">
+                  <option>Unknown — needs investigation</option>
+                  <option>Breathing problems / Respiratory</option>
+                  <option>Stomach illness / Coccidiosis</option>
+                  <option>Newcastle disease</option>
+                  <option>Heat stress</option>
+                  <option>Injury / trauma</option>
+                  <option>Egg problems (peritonitis)</option>
+                  <option>Contaminated feed or water</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Symptoms observed</label><textarea id="m-symptoms"
+                  placeholder="e.g. Drooping wings, watery droppings…"></textarea></div>
+              <div class="form-group"><label>Vet status</label>
+                <select id="m-vet">
+                  <option value="no">Not yet reported</option>
+                  <option value="called">Reported by phone</option>
+                  <option value="visited">Vet examined the birds</option>
+                  <option value="treated">Treatment given by vet</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="addMortality()">Record Death(s)</button>
+                <button class="btn" onclick="generateVetReport()">Generate Vet Report</button>
+              </div>
+              <div class="msg-banner" id="m-msg"></div>
+            </div>
+            <div class="card">
+              <div id="vet-placeholder" style="font-size:13px;color:var(--text3);margin-bottom:14px">Fill the death
+                record form and tap "Generate Vet Report" to create a shareable report.</div>
+              <pre id="vet-report"
+                style="display:none;background:var(--bg3);border-radius:var(--r);padding:14px;font-size:12px;color:var(--text2);white-space:pre-wrap;font-family:var(--mono);border:1px solid var(--border);line-height:1.7;margin-bottom:10px"></pre>
+              <div id="vet-report-actions" style="display:none;margin-bottom:16px">
+                <button class="btn btn-sm btn-wa" onclick="shareVetReport()">📤 Share via WhatsApp</button>
+              </div>
+              <!-- Mortality chart -->
+              <h2>Monthly Mortality Chart</h2>
+              <div class="mort-chart" id="mort-chart"></div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each colour = one flock batch.
+                Height
+                =
+                total deaths that month.</div>
+            </div>
+          </div>
+          <!-- Calendar + PDF for death log -->
+          <div class="card g1" style="padding:14px 18px">
+            <div class="cal-picker">
+              <label>View month:</label>
+              <select id="mort-cal-month"></select>
+              <select id="mort-cal-year"></select>
+              <button class="cal-apply" onclick="renderMortTable()">Show</button>
+              <button class="btn btn-sm" onclick="clearMortCal()">All records</button>
+              <button class="btn btn-sm" onclick="exportTablePDF('mort-table','Mortality Log')">⬇ Export
+                PDF</button>
+            </div>
+          </div>
+          <div class="card flush g1">
+            <div class="card-head">
+              <h2 style="margin:0" id="mort-log-title">Death Log</h2>
+            </div>
+            <div class="card-body" style="padding:0">
+              <div class="tbl-wrap">
+                <table id="mort-table">
+                  <tr>
+                    <th>Date</th>
+                    <th>Flock Batch</th>
+                    <th>Age (wks)</th>
+                    <th>Birds</th>
+                    <th>Cause</th>
+                    <th>Vet</th>
+                  </tr>
+                </table>
+              </div>
+              <div id="mort-zero" class="zero-state" style="padding:20px 0">
+                <div class="zi">🎉</div><strong>No deaths recorded</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ VACCINATION ═══ -->
+        <div class="page" id="page-vaccines">
+          <!-- Flock selector -->
+          <div class="card g1">
+            <div class="sec-hd">
+              <h2 style="margin:0">Your Flock Batches</h2>
+              <button class="btn btn-sm btn-primary" onclick="openAddFlockModal()">+ Add Flock Batch</button>
+            </div>
+            <div class="vac-flock-tab" id="flock-tabs"></div>
+            <div id="vac-flock-info" style="font-size:13px;color:var(--text3)">No flock batches added yet. Add your
+              first batch above.</div>
+          </div>
+          <div id="vac-reminders" style="margin-bottom:14px"></div>
+          <div class="card" id="vac-schedule-card">
+            <div class="sec-hd">
+              <h2 style="margin:0" id="vac-schedule-title">Vaccination Schedule</h2><button class="btn btn-sm"
+                onclick="exportTablePDF('vac-table','Vaccination Schedule')">⬇ PDF</button>
+            </div>
+            <div id="vac-age" style="font-size:13px;color:var(--text3);margin-bottom:12px"></div>
             <div class="tbl-wrap">
-              <table id="feed-table">
+              <table id="vac-table">
                 <tr>
-                  <th>Date</th>
-                  <th>Supplier</th>
-                  <th>Type</th>
-                  <th>Bags</th>
-                  <th>Price/bag</th>
-                  <th>Total</th>
-                  <th>Paid via</th>
-                  <th>Delivery</th>
-                  <th></th>
+                  <th>Vaccine</th>
+                  <th>Target age</th>
+                  <th>Due date</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th>Vet / Given by</th>
+                  <th>Action</th>
                 </tr>
               </table>
             </div>
-            <div id="feed-zero" class="zero-state">
-              <div class="zi">🌾</div><strong>No feed purchases recorded yet</strong>
+            <div class="sep"></div>
+            <h3>📋 Record a vaccination you gave</h3>
+            <div class="alert al-blue" style="margin-bottom:12px"><span class="alert-ico">ℹ</span>
+              <div id="alert-vac-info">Pick the batch and the vaccine, then enter the date. The flock's age is worked
+                out for you. The app uses these records to predict what's missed, overdue, or coming up.</div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Which batch did you vaccinate?</label><select id="vrec-batch"
+                  onchange="updateVacAgePreview()"></select></div>
+              <div class="form-group"><label>Which vaccine type?</label><select id="vrec-type"
+                  onchange="toggleVacCustom()"></select></div>
+            </div>
+            <div class="form-group" id="vrec-custom-wrap" style="display:none"><label>Custom vaccine
+                name</label><input type="text" id="vrec-custom" placeholder="e.g. Newcastle booster" /></div>
+            <div class="form-row">
+              <div class="form-group"><label>Date you vaccinated</label><input type="date" id="vrec-date"
+                  onchange="updateVacAgePreview()" /></div>
+              <div class="form-group"><label>Age of flock on that day</label><input type="text" id="vrec-age" readonly
+                  style="background:var(--bg3);font-weight:700" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Given by (vet name, optional)</label><input type="text" id="vrec-vet"
+                  placeholder="e.g. Dr. Kamau" /></div>
+              <div class="form-group"><label>Vet phone (optional)</label><input type="tel" id="vrec-vet-phone"
+                  placeholder="e.g. 0712345678" /></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="saveVaccination()">✓ Save vaccination
+                record</button></div>
+            <div class="msg-banner" id="vac-msg"></div>
+          </div>
+        </div>
+
+        <!-- ═══ SUPPLIERS ═══ -->
+        <div class="page" id="page-suppliers">
+          <div class="g2">
+            <div class="card">
+              <h2>Supplier Reliability Scores</h2>
+              <div id="supplier-scores">
+                <div class="zero-state" style="padding:20px 0">
+                  <div class="zi">🚚</div>
+                  <p>Record feed purchases and supplier ratings to see scores.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Rate a Supplier</h2>
+              <div class="form-group"><label>Supplier name</label><input type="text" id="sup-name"
+                  placeholder="Supplier name" /></div>
+              <div class="form-group"><label>Phone number <span style="color:var(--red)">*required</span></label><input
+                  type="tel" id="sup-phone" placeholder="0712345678" /></div>
+              <div class="form-group"><label>What did you buy / what service?</label>
+                <select id="sup-what">
+                  <option value="">— Select —</option>
+                  <option>Layers mash / Feed bags</option>
+                  <option>Vaccines &amp; medicines</option>
+                  <option>Day-old chicks</option>
+                  <option>Equipment &amp; supplies</option>
+                  <option>Veterinary services</option>
+                  <option>Transport / delivery</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Amount paid (KSh)</label><input type="number" id="sup-amount"
+                  placeholder="e.g. 57000" inputmode="numeric" /></div>
+              <div class="form-group"><label>Satisfaction rating</label>
+                <div class="star-rating" id="sup-star-row">
+                  <span onclick="setSupRating(1)">★</span>
+                  <span onclick="setSupRating(2)">★</span>
+                  <span onclick="setSupRating(3)">★</span>
+                  <span onclick="setSupRating(4)">★</span>
+                  <span onclick="setSupRating(5)">★</span>
+                </div>
+                <input type="hidden" id="sup-rating" value="0" />
+                <div style="font-size:12px;color:var(--text3)" id="sup-rating-label">Tap stars to rate</div>
+              </div>
+              <div class="form-group"><label>Notes</label><textarea id="sup-notes"
+                  placeholder="e.g. Delivered 3 days late, called twice."></textarea></div>
+              <div class="form-actions"><button class="btn btn-primary" onclick="saveSupplierRating()">Save
+                  Rating</button></div>
+              <div class="msg-banner" id="sup-msg"></div>
+            </div>
+          </div>
+          <!-- Supplier log with calendar -->
+          <div class="card g1" style="padding:14px 18px">
+            <div class="cal-picker">
+              <label>View month:</label>
+              <select id="sup-cal-month"></select>
+              <select id="sup-cal-year"></select>
+              <button class="cal-apply" onclick="renderSupplierLog()">Show</button>
+              <button class="btn btn-sm" onclick="clearSupCal()">All records</button>
+              <button class="btn btn-sm" onclick="exportTablePDF('sup-log-table','Supplier Log')">⬇ Export
+                PDF</button>
+            </div>
+          </div>
+          <div class="card flush g1">
+            <div class="card-head">
+              <h2 style="margin:0" id="sup-log-title">Supplier Transaction Log</h2>
+            </div>
+            <div class="card-body" style="padding:0">
+              <div class="tbl-wrap">
+                <table id="sup-log-table">
+                  <tr>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>Phone</th>
+                    <th>Service / Item</th>
+                    <th>Amount Paid</th>
+                    <th>Rating</th>
+                    <th>Notes</th>
+                </table>
+              </div>
+              <div id="sup-log-zero" class="zero-state">
+                <div class="zi">🚚</div>
+                <p>No supplier ratings recorded yet.</p>
+              </div>
             </div>
           </div>
         </div>
-    </div>
 
-    <!-- ═══ FLOCK & HEALTH ═══ -->
-    <div class="page" id="page-flock">
-      <div class="g4" style="margin-bottom:14px">
-        <div class="metric">
-          <div class="lbl">Birds alive</div>
-          <div class="val green" id="f-live-birds">—</div>
-          <div class="sub" id="f-started">—</div>
-        </div>
-        <div class="metric">
-          <div class="lbl">Deaths this month</div>
-          <div class="val amber" id="f-mort-month">0</div>
-          <div class="sub">Target &lt;1%/month</div>
-        </div>
-        <div class="metric">
-          <div class="lbl">Laying rate</div>
-          <div class="val green" id="f-lay-rate">—</div>
-          <div class="sub">From today's record</div>
-        </div>
-        <div class="metric">
-          <div class="lbl">Flock age</div>
-          <div class="val" id="f-age-wks">—</div>
-          <div class="sub" id="f-age-days">—</div>
-        </div>
-      </div>
-      <div class="g2">
-        <div class="card">
-          <h2>Record a Death</h2>
-          <div class="form-row">
-            <div class="form-group"><label>Date found</label><input type="date" id="m-date" /></div>
-            <div class="form-group"><label>Number of birds</label>
-              <div class="stepper"><button class="stepper-btn" onclick="stepVal('m-num',-1)">−</button><input
-                  type="number" id="m-num" value="1" min="1" /><button class="stepper-btn"
-                  onclick="stepVal('m-num',1)">+</button></div>
+        <!-- ═══ SETTINGS ═══ -->
+        <div class="page" id="page-settings">
+          <div class="g2">
+            <div class="card">
+              <h2>Farm Details</h2>
+              <div class="form-group"><label>Farm name</label><input type="text" id="set-name"
+                  placeholder="e.g. Mutua Layers Farm" /></div>
+              <div class="form-group"><label>Location / tagline</label><input type="text" id="set-tag"
+                  placeholder="e.g. Nakuru County — 800 birds" /></div>
+              <div class="form-group"><label>Usual price per tray (KSh)</label><input type="number" id="set-pprice"
+                  placeholder="e.g. 430" inputmode="numeric" /></div>
+              <div class="form-actions"><button class="btn btn-primary" onclick="saveFarmSettings()">Save
+                  Settings</button></div>
+              <div class="msg-banner" id="set-msg"></div>
+              <div class="sep"></div>
+              <h3>Change PIN</h3>
+              <div class="form-group"><label>Current PIN</label><input type="password" id="set-cur-pin" maxlength="4"
+                  inputmode="numeric" placeholder="••••" /></div>
+              <div class="form-group"><label>New 4-digit PIN</label><input type="password" id="set-new-pin"
+                  maxlength="4" inputmode="numeric" placeholder="••••" /></div>
+              <div class="form-group"><label>Confirm new PIN</label><input type="password" id="set-new-pin2"
+                  maxlength="4" inputmode="numeric" placeholder="••••" /></div>
+              <div class="form-actions"><button class="btn btn-primary" onclick="changePin()">Update PIN</button></div>
+              <div class="msg-banner" id="set-pin-msg"></div>
             </div>
-          </div>
-          <div class="form-group"><label>Flock batch (which birds?)</label>
-            <select id="m-flock-batch"></select>
-          </div>
-          <div class="form-group"><label>Flock age at death (weeks)</label><input type="number" id="m-age"
-              placeholder="e.g. 32" inputmode="numeric" min="1" /></div>
-          <div class="form-group"><label>Likely cause</label>
-            <select id="m-cause">
-              <option>Unknown — needs investigation</option>
-              <option>Breathing problems / Respiratory</option>
-              <option>Stomach illness / Coccidiosis</option>
-              <option>Newcastle disease</option>
-              <option>Heat stress</option>
-              <option>Injury / trauma</option>
-              <option>Egg problems (peritonitis)</option>
-              <option>Contaminated feed or water</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Symptoms observed</label><textarea id="m-symptoms"
-              placeholder="e.g. Drooping wings, watery droppings…"></textarea></div>
-          <div class="form-group"><label>Vet status</label>
-            <select id="m-vet">
-              <option value="no">Not yet reported</option>
-              <option value="called">Reported by phone</option>
-              <option value="visited">Vet examined the birds</option>
-              <option value="treated">Treatment given by vet</option>
-            </select>
-          </div>
-          <div class="form-actions">
-            <button class="btn btn-primary" onclick="addMortality()">Record Death(s)</button>
-            <button class="btn" onclick="generateVetReport()">Generate Vet Report</button>
-          </div>
-          <div class="msg-banner" id="m-msg"></div>
-        </div>
-        <div class="card">
-          <div id="vet-placeholder" style="font-size:13px;color:var(--text3);margin-bottom:14px">Fill the death
-            record form and tap "Generate Vet Report" to create a shareable report.</div>
-          <pre id="vet-report"
-            style="display:none;background:var(--bg3);border-radius:var(--r);padding:14px;font-size:12px;color:var(--text2);white-space:pre-wrap;font-family:var(--mono);border:1px solid var(--border);line-height:1.7;margin-bottom:10px"></pre>
-          <div id="vet-report-actions" style="display:none;margin-bottom:16px">
-            <button class="btn btn-sm btn-wa" onclick="shareVetReport()">📤 Share via WhatsApp</button>
-          </div>
-          <!-- Mortality chart -->
-          <h2>Monthly Mortality Chart</h2>
-          <div class="mort-chart" id="mort-chart"></div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each colour = one flock batch.
-            Height
-            =
-            total deaths that month.</div>
-        </div>
-      </div>
-      <!-- Calendar + PDF for death log -->
-      <div class="card g1" style="padding:14px 18px">
-        <div class="cal-picker">
-          <label>View month:</label>
-          <select id="mort-cal-month"></select>
-          <select id="mort-cal-year"></select>
-          <button class="cal-apply" onclick="renderMortTable()">Show</button>
-          <button class="btn btn-sm" onclick="clearMortCal()">All records</button>
-          <button class="btn btn-sm" onclick="exportTablePDF('mort-table','Mortality Log')">⬇ Export
-            PDF</button>
-        </div>
-      </div>
-      <div class="card flush g1">
-        <div class="card-head">
-          <h2 style="margin:0" id="mort-log-title">Death Log</h2>
-        </div>
-        <div class="card-body" style="padding:0">
-          <div class="tbl-wrap">
-            <table id="mort-table">
-              <tr>
-                <th>Date</th>
-                <th>Flock Batch</th>
-                <th>Age (wks)</th>
-                <th>Birds</th>
-                <th>Cause</th>
-                <th>Vet</th>
-              </tr>
-            </table>
-          </div>
-          <div id="mort-zero" class="zero-state" style="padding:20px 0">
-            <div class="zi">🎉</div><strong>No deaths recorded</strong>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ VACCINATION ═══ -->
-    <div class="page" id="page-vaccines">
-      <!-- Flock selector -->
-      <div class="card g1">
-        <div class="sec-hd">
-          <h2 style="margin:0">Your Flock Batches</h2>
-          <button class="btn btn-sm btn-primary" onclick="openAddFlockModal()">+ Add Flock Batch</button>
-        </div>
-        <div class="vac-flock-tab" id="flock-tabs"></div>
-        <div id="vac-flock-info" style="font-size:13px;color:var(--text3)">No flock batches added yet. Add your
-          first batch above.</div>
-      </div>
-      <div id="vac-reminders" style="margin-bottom:14px"></div>
-      <div class="card" id="vac-schedule-card">
-        <div class="sec-hd">
-          <h2 style="margin:0" id="vac-schedule-title">Vaccination Schedule</h2><button class="btn btn-sm"
-            onclick="exportTablePDF('vac-table','Vaccination Schedule')">⬇ PDF</button>
-        </div>
-        <div id="vac-age" style="font-size:13px;color:var(--text3);margin-bottom:12px"></div>
-        <div class="tbl-wrap">
-          <table id="vac-table">
-            <tr>
-              <th>Vaccine</th>
-              <th>Target age</th>
-              <th>Due date</th>
-              <th>Method</th>
-              <th>Status</th>
-              <th>Vet / Given by</th>
-              <th>Action</th>
-            </tr>
-          </table>
-        </div>
-        <div class="sep"></div>
-        <h3>📋 Record a vaccination you gave</h3>
-        <div class="alert al-blue" style="margin-bottom:12px"><span class="alert-ico">ℹ</span>
-          <div id="alert-vac-info">Pick the batch and the vaccine, then enter the date. The flock's age is worked
-            out for you. The app uses these records to predict what's missed, overdue, or coming up.</div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Which batch did you vaccinate?</label><select id="vrec-batch"
-              onchange="updateVacAgePreview()"></select></div>
-          <div class="form-group"><label>Which vaccine type?</label><select id="vrec-type"
-              onchange="toggleVacCustom()"></select></div>
-        </div>
-        <div class="form-group" id="vrec-custom-wrap" style="display:none"><label>Custom vaccine
-            name</label><input type="text" id="vrec-custom" placeholder="e.g. Newcastle booster" /></div>
-        <div class="form-row">
-          <div class="form-group"><label>Date you vaccinated</label><input type="date" id="vrec-date"
-              onchange="updateVacAgePreview()" /></div>
-          <div class="form-group"><label>Age of flock on that day</label><input type="text" id="vrec-age" readonly
-              style="background:var(--bg3);font-weight:700" /></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Given by (vet name, optional)</label><input type="text" id="vrec-vet"
-              placeholder="e.g. Dr. Kamau" /></div>
-          <div class="form-group"><label>Vet phone (optional)</label><input type="tel" id="vrec-vet-phone"
-              placeholder="e.g. 0712345678" /></div>
-        </div>
-        <div class="form-actions"><button class="btn btn-primary" onclick="saveVaccination()">✓ Save vaccination
-            record</button></div>
-        <div class="msg-banner" id="vac-msg"></div>
-      </div>
-    </div>
-
-    <!-- ═══ SUPPLIERS ═══ -->
-    <div class="page" id="page-suppliers">
-      <div class="g2">
-        <div class="card">
-          <h2>Supplier Reliability Scores</h2>
-          <div id="supplier-scores">
-            <div class="zero-state" style="padding:20px 0">
-              <div class="zi">🚚</div>
-              <p>Record feed purchases and supplier ratings to see scores.</p>
+            <div class="card">
+              <h2>Export Records</h2>
+              <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Download records as PDF — useful for
+                bank loan applications and vet visits.</div>
+              <button class="btn" style="width:100%;justify-content:flex-start" onclick="exportBackup()">💾 Download
+                full backup (.json)</button>
+              <button class="btn" style="width:100%;justify-content:flex-start"
+                onclick="document.getElementById('backup-file-input').click()">♻ Restore from backup</button>
+              <input type="file" id="backup-file-input" accept="application/json" style="display:none"
+                onchange="if(this.files[0]) importBackup(this.files[0])" />
+              <div class="form-actions" style="flex-direction:column;gap:10px">
+                <button class="btn" style="width:100%;justify-content:flex-start"
+                  onclick="exportTablePDF('full-sales-table','Sales')">⬇ Sales PDF</button>
+                <button class="btn" style="width:100%;justify-content:flex-start"
+                  onclick="exportTablePDF('debtor-table','Debtors')">⬇ Debtors PDF</button>
+                <button class="btn" style="width:100%;justify-content:flex-start"
+                  onclick="exportTablePDF('feed-table','Feed Purchases')">⬇ Feed Purchases PDF</button>
+                <button class="btn" style="width:100%;justify-content:flex-start"
+                  onclick="exportTablePDF('exp-table','Expenses')">⬇ Expenses PDF</button>
+                <button class="btn" style="width:100%;justify-content:flex-start"
+                  onclick="exportTablePDF('mort-table','Mortality Log')">⬇ Mortality PDF</button>
+              </div>
+              <div class="sep"></div>
+              <h3>Danger Zone</h3>
+              <div class="alert al-red"><span class="alert-ico">⚠</span>
+                <div id="alert-settings-danger">Download PDFs before clearing!</div>
+              </div>
+              <button class="btn btn-danger" onclick="confirmClearAll()">Clear all records for this farm</button>
             </div>
           </div>
         </div>
-        <div class="card">
-          <h2>Rate a Supplier</h2>
-          <div class="form-group"><label>Supplier name</label><input type="text" id="sup-name"
-              placeholder="Supplier name" /></div>
-          <div class="form-group"><label>Phone number <span style="color:var(--red)">*required</span></label><input
-              type="tel" id="sup-phone" placeholder="0712345678" /></div>
-          <div class="form-group"><label>What did you buy / what service?</label>
-            <select id="sup-what">
-              <option value="">— Select —</option>
-              <option>Layers mash / Feed bags</option>
-              <option>Vaccines &amp; medicines</option>
-              <option>Day-old chicks</option>
-              <option>Equipment &amp; supplies</option>
-              <option>Veterinary services</option>
-              <option>Transport / delivery</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Amount paid (KSh)</label><input type="number" id="sup-amount"
-              placeholder="e.g. 57000" inputmode="numeric" /></div>
-          <div class="form-group"><label>Satisfaction rating</label>
-            <div class="star-rating" id="sup-star-row">
-              <span onclick="setSupRating(1)">★</span>
-              <span onclick="setSupRating(2)">★</span>
-              <span onclick="setSupRating(3)">★</span>
-              <span onclick="setSupRating(4)">★</span>
-              <span onclick="setSupRating(5)">★</span>
-            </div>
-            <input type="hidden" id="sup-rating" value="0" />
-            <div style="font-size:12px;color:var(--text3)" id="sup-rating-label">Tap stars to rate</div>
-          </div>
-          <div class="form-group"><label>Notes</label><textarea id="sup-notes"
-              placeholder="e.g. Delivered 3 days late, called twice."></textarea></div>
-          <div class="form-actions"><button class="btn btn-primary" onclick="saveSupplierRating()">Save
-              Rating</button></div>
-          <div class="msg-banner" id="sup-msg"></div>
-        </div>
-      </div>
-      <!-- Supplier log with calendar -->
-      <div class="card g1" style="padding:14px 18px">
-        <div class="cal-picker">
-          <label>View month:</label>
-          <select id="sup-cal-month"></select>
-          <select id="sup-cal-year"></select>
-          <button class="cal-apply" onclick="renderSupplierLog()">Show</button>
-          <button class="btn btn-sm" onclick="clearSupCal()">All records</button>
-          <button class="btn btn-sm" onclick="exportTablePDF('sup-log-table','Supplier Log')">⬇ Export
-            PDF</button>
-        </div>
-      </div>
-      <div class="card flush g1">
-        <div class="card-head">
-          <h2 style="margin:0" id="sup-log-title">Supplier Transaction Log</h2>
-        </div>
-        <div class="card-body" style="padding:0">
-          <div class="tbl-wrap">
-            <table id="sup-log-table">
-              <tr>
-                <th>Date</th>
-                <th>Supplier</th>
-                <th>Phone</th>
-                <th>Service / Item</th>
-                <th>Amount Paid</th>
-                <th>Rating</th>
-                <th>Notes</th>
-            </table>
-          </div>
-          <div id="sup-log-zero" class="zero-state">
-            <div class="zi">🚚</div>
-            <p>No supplier ratings recorded yet.</p>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- ═══ SETTINGS ═══ -->
-    <div class="page" id="page-settings">
-      <div class="g2">
-        <div class="card">
-          <h2>Farm Details</h2>
-          <div class="form-group"><label>Farm name</label><input type="text" id="set-name"
-              placeholder="e.g. Mutua Layers Farm" /></div>
-          <div class="form-group"><label>Location / tagline</label><input type="text" id="set-tag"
-              placeholder="e.g. Nakuru County — 800 birds" /></div>
-          <div class="form-group"><label>Usual price per tray (KSh)</label><input type="number" id="set-pprice"
-              placeholder="e.g. 430" inputmode="numeric" /></div>
-          <div class="form-actions"><button class="btn btn-primary" onclick="saveFarmSettings()">Save
-              Settings</button></div>
-          <div class="msg-banner" id="set-msg"></div>
-        </div>
-        <div class="card">
-          <h2>Export Records</h2>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Download records as PDF — useful for
-            bank loan applications and vet visits.</div>
-          <button class="btn" style="width:100%;justify-content:flex-start" onclick="exportBackup()">💾 Download
-            full backup (.json)</button>
-          <button class="btn" style="width:100%;justify-content:flex-start"
-            onclick="document.getElementById('backup-file-input').click()">♻ Restore from backup</button>
-          <input type="file" id="backup-file-input" accept="application/json" style="display:none"
-            onchange="if(this.files[0]) importBackup(this.files[0])" />
-          <div class="form-actions" style="flex-direction:column;gap:10px">
-            <button class="btn" style="width:100%;justify-content:flex-start"
-              onclick="exportTablePDF('full-sales-table','Sales')">⬇ Sales PDF</button>
-            <button class="btn" style="width:100%;justify-content:flex-start"
-              onclick="exportTablePDF('debtor-table','Debtors')">⬇ Debtors PDF</button>
-            <button class="btn" style="width:100%;justify-content:flex-start"
-              onclick="exportTablePDF('feed-table','Feed Purchases')">⬇ Feed Purchases PDF</button>
-            <button class="btn" style="width:100%;justify-content:flex-start"
-              onclick="exportTablePDF('exp-table','Expenses')">⬇ Expenses PDF</button>
-            <button class="btn" style="width:100%;justify-content:flex-start"
-              onclick="exportTablePDF('mort-table','Mortality Log')">⬇ Mortality PDF</button>
-          </div>
-          <div class="sep"></div>
-          <h3>Danger Zone</h3>
-          <div class="alert al-red"><span class="alert-ico">⚠</span>
-            <div id="alert-settings-danger">Download PDFs before clearing!</div>
-          </div>
-          <button class="btn btn-danger" onclick="confirmClearAll()">Clear all records for this farm</button>
-        </div>
-      </div>
+      </main>
     </div>
-
-    </main>
-  </div>
   </div>
 
   <div class="nav-overlay" id="overlay" onclick="toggleSidebar()"></div>
@@ -3440,14 +3449,32 @@
     // ════════════════════════════════════════
     // SALES
     // ════════════════════════════════════════
+    function getEggStock() {
+      const recs = LS.get('dailyRecords') || {};
+      let collected = 0;
+      Object.values(recs).forEach(r => { collected += (r.trays * 30) + (r.loose || 0); });
+      const sold = LS.getArr('sales').reduce((s, x) => s + (x.trays * 30) + (x.loose || 0), 0);
+      return Math.max(0, collected - sold);
+    }
     function updateSalePreview() { const t = +document.getElementById('s-trays').value || 0, l = +document.getElementById('s-loose').value || 0, p = +document.getElementById('s-price').value || 0, total = t * p + Math.round(l / 30 * p); document.getElementById('sale-total-preview').textContent = 'KSh ' + total.toLocaleString(); }
     function addSale() {
       const date = document.getElementById('s-date').value, cust = document.getElementById('s-cust').value.trim(), trays = +document.getElementById('s-trays').value || 0, loose = +document.getElementById('s-loose').value || 0, price = +document.getElementById('s-price').value || 0, pay = document.getElementById('s-pay').value, bankName = document.getElementById('s-bank').value, due = document.getElementById('s-due').value;
       if (!cust) { showMsgBanner('s-msg', 'Enter customer name.', 'err'); return; }
       if (!trays && !loose) { showMsgBanner('s-msg', 'Enter trays or loose eggs.', 'err'); return; }
       if (!price) { showMsgBanner('s-msg', 'Enter price per tray.', 'err'); return; }
+      const _sw = getLang() === 'sw';
       const _drec = (LS.get('dailyRecords') || {})[date];
-      if (_drec) { const _collected = (_drec.trays * 30) + (_drec.loose || 0); if (_collected > 0) { const _soldAlready = LS.getArr('sales').filter(s => s.date === date).reduce((sum, s) => sum + (s.trays * 30) + (s.loose || 0), 0); const _thisSale = trays * 30 + loose; if (_soldAlready + _thisSale > _collected) { const _over = _soldAlready + _thisSale - _collected; const _msg = getLang() === 'sw' ? 'Onyo: Unauza mayai ' + _over + ' zaidi kuliko yaliyokusanywa leo (' + _collected + '). Je, unataka kuendelea?' : 'Warning: You are selling ' + _over + ' more eggs than collected today (' + _collected + '). Continue anyway?'; if (!confirm(_msg)) return; } } }
+      if (!_drec) { showMsgBanner('s-msg', _sw ? 'Rekodi mayai yaliyokusanywa siku hii kwanza kabla ya kuuza.' : "Record this day's egg collection first before recording a sale.", 'err'); return; }
+      const _thisSale = trays * 30 + loose;
+      const _available = getEggStock();
+      if (_thisSale > _available) {
+        const _short = _thisSale - _available;
+        const _availTrays = Math.floor(_available / 30), _availLoose = _available % 30;
+        const _msg = _sw
+          ? 'Onyo: Una trei ' + _availTrays + (_availLoose ? ' + mayai ' + _availLoose : '') + ' tu kwenye hisa (mayai ' + _available + '). Unauza zaidi kwa mayai ' + _short + '. Je, unataka kuendelea?'
+          : 'Warning: you only have ' + _availTrays + ' trays' + (_availLoose ? ' + ' + _availLoose + ' eggs' : '') + ' left in stock (' + _available + ' eggs). You are selling ' + _short + ' eggs more than that. Continue anyway?';
+        if (!confirm(_msg)) return;
+      }
       const total = trays * price + Math.round(loose / 30 * price);
       const sale = { _id: getNextId(), date, cust, trays, loose, price, pay, bankName: pay === 'bank' ? bankName : '', totalAmount: total, status: pay === 'credit' ? 'pending' : 'received' };
       LS.pushArr('sales', sale);
@@ -3615,7 +3642,7 @@
       const badge = document.getElementById('debt-badge'); if (badge) { badge.textContent = active.length; badge.style.display = active.length ? '' : 'none'; }
       const starsHtml = n => '★'.repeat(n) + '☆'.repeat(5 - n), stC = n => n >= 4 ? 'hi' : n >= 3 ? '' : ' lo';
       const sm = { pending: '<span class="tag ta">' + t('Pending') + '</span>', overdue: '<span class="tag tr">' + t('Overdue') + '</span>', paid: '<span class="tag tg">' + t('Paid') + '</span>' };
-      let rows = '<tr><th>Customer</th><th>Date taken</th><th>Amount owed</th><th>Days</th><th>Rating</th><th>Status</th><th>Action</th></tr>';
+      let rows = '<tr><th>' + (getLang() === 'sw' ? 'Mteja' : 'Customer') + '</th><th>' + (getLang() === 'sw' ? 'Tarehe iliyochukuliwa' : 'Date taken') + '</th><th>' + (getLang() === 'sw' ? 'Kiasi kinachohitajika' : 'Amount owed') + '</th><th>' + (getLang() === 'sw' ? 'Siku' : 'Days') + '</th><th>' + (getLang() === 'sw' ? 'Ukadiriaji' : 'Rating') + '</th><th>' + (getLang() === 'sw' ? 'Hali' : 'Status') + '</th><th>' + (getLang() === 'sw' ? 'Kitendo' : 'Action') + '</th></tr>';
       [...debtors].sort((a, b) => (b.owed || 0) - (a.owed || 0)).forEach(d => {
         const days = daysBetween(d.date, TODAY), st = d.owed <= 0 ? 'paid' : (days > 14 ? 'overdue' : 'pending'), r = d.rating || 5; rows += '<tr><td><strong>' + escH(d.cust) + '</strong>' + (d.phone ? '<div style="font-size:11px;color:var(--text3)">' + escH(d.phone) + '</div>' : '') + `</td><td>${shortDate(d.date)}</td><td style="font-weight:700;color:${d.owed > 0 ? (days > 14 ? 'var(--red)' : 'var(--amber)') : 'var(--green)'}">KSh ${(d.owed || 0).toLocaleString()}</td><td style="color:${days > 14 ? 'var(--red)' : days > 7 ? 'var(--amber)' : 'var(--text2)'};">${days}d</td><td><span class="stars${stC(r)}">${starsHtml(r)}</span></td><td>${sm[st]}</td><td style="display:flex;gap:4px">${d.owed > 0 ? '<button class="btn btn-sm btn-primary" onclick="openPaymentModal(' + d._id + ')">' + t('Record Payment') + '</button>' : ''}
 ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust) + '\',' + d.owed + ',' + days + ',\'' + escH(d.phone) + '\')">' + t('SMS') + '</button>' : ''}
@@ -3865,7 +3892,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       document.getElementById('vac-age').textContent = 'Arrived: ' + formatDate(batch.dod) + ' · Age: ' + flockAgeDays(batch.dod) + ' days (~' + flockAgeWks(batch.dod) + ' weeks) · Breed: ' + (batch.breed || 'Not specified');
       const list = computeVaccinesForBatch(batch);
       const tag = { given: '<span class="tag tg">' + t('Given ✓') + '</span>', missed: '<span class="tag tm">' + t('Missed') + '</span>', overdue: '<span class="tag tr">' + t('Overdue') + '</span>', due: '<span class="tag ta">' + t('Due now') + '</span>', upcoming: '<span class="tag ts">' + t('Upcoming') + '</span>' };
-      let rows = '<tr><th>Vaccine</th><th>Target age</th><th>Due date</th><th>Method</th><th>Status</th><th>Given on / age</th><th>Action</th></tr>';
+      let rows = '<tr><th>' + (getLang() === 'sw' ? 'Chanjo' : 'Vaccine') + '</th><th>' + (getLang() === 'sw' ? 'Umri unaolengwa' : 'Target age') + '</th><th>' + (getLang() === 'sw' ? 'Tarehe ya mwisho' : 'Due date') + '</th><th>' + (getLang() === 'sw' ? 'Njia' : 'Method') + '</th><th>' + (getLang() === 'sw' ? 'Hali' : 'Status') + '</th><th>' + (getLang() === 'sw' ? 'Ilitolewa / umri' : 'Given on / age') + '</th><th>' + (getLang() === 'sw' ? 'Kitendo' : 'Action') + '</th></tr>';
       list.forEach(v => {
         let act, givenCol;
         if (v.given) {
@@ -4022,6 +4049,23 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       const farms = getFarms(), idx = farms.findIndex(f => f.phone === currentFarm.phone); if (idx >= 0) farms[idx] = currentFarm; LS.set('farms', farms, false);
       document.getElementById('brand-name').textContent = name; document.getElementById('brand-sub').textContent = tag;
       showMsgBanner('set-msg', 'Settings saved.', 'ok');
+    }
+    function changePin() {
+      if (!currentFarm) return;
+      const cur = document.getElementById('set-cur-pin').value.trim();
+      const np = document.getElementById('set-new-pin').value.trim();
+      const np2 = document.getElementById('set-new-pin2').value.trim();
+      if (cur !== currentFarm.pin) { showMsgBanner('set-pin-msg', 'Current PIN is incorrect.', 'err'); return; }
+      if (!/^[0-9]{4}$/.test(np)) { showMsgBanner('set-pin-msg', 'New PIN must be exactly 4 digits.', 'err'); return; }
+      if (np !== np2) { showMsgBanner('set-pin-msg', 'New PINs do not match.', 'err'); return; }
+      currentFarm.pin = np;
+      const farms = getFarms(), idx = farms.findIndex(f => f.phone === currentFarm.phone);
+      if (idx >= 0) farms[idx] = currentFarm;
+      LS.set('farms', farms, false);
+      document.getElementById('set-cur-pin').value = '';
+      document.getElementById('set-new-pin').value = '';
+      document.getElementById('set-new-pin2').value = '';
+      showMsgBanner('set-pin-msg', 'PIN updated. Use your new PIN next time you sign in.', 'ok');
     }
     function confirmClearAll() { if (!confirm(t('This will permanently delete ALL records. Download PDFs first. Are you sure?'))) return; if (!confirm(t('Last chance — cannot be undone. Confirm?'))) return;['sales', 'feeds', 'expenses', 'mortality', 'vaccines', 'debtors', 'payments', 'dailyRecords', 'supplierRatings', 'flockBatches', '_nid', 'feedStock'].forEach(k => LS.set(k, null)); alert(t('All records cleared.')); initApp(); }
     // ════════════════════════════════════════
