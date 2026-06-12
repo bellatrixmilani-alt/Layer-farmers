@@ -4904,10 +4904,6 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         if (f) { loginAs(f); return; }
       }
     });
-    applyLangUI();
-    const session = LS.get('session', false);
-    if (session && session.phone) { const f = getFarms().find(x => x.phone === session.phone); if (f) { loginAs(f); return; } }
-    });
   </script>
   <link rel="manifest" href="manifest.json">
   <script>
