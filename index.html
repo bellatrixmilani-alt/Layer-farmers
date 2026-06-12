@@ -3234,7 +3234,7 @@
 
       if (f) { errEl.textContent = ''; loginAs(f); }
       else errEl.textContent = 'Wrong phone or PIN. Demo: 0700000000 / 1234';
-    } const u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pin').value.trim(); const inputHash = await hashPin(p); const f = (await getFarms()).find(x => x.phone === u && x.pinHash === inputHash); if (f) loginAs(f); else document.getElementById('login-err').textContent = 'Wrong phone or PIN. Demo: 0700000000 / 1234'; }
+    }
     function showCreateView() { document.getElementById('signin-view').style.display = 'none'; document.getElementById('create-view').style.display = 'block'; setupStep = 1; renderSetupDots(); showStep(1); }
     function showSigninView() { document.getElementById('create-view').style.display = 'none'; document.getElementById('signin-view').style.display = 'block'; }
     let setupStep = 1;
