@@ -486,7 +486,7 @@
     .topbar-right {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       flex-shrink: 0
     }
 
@@ -2068,12 +2068,41 @@
     </aside>
 
     <div class="main">
-      <header class="topbar">
+      <header class="topbar" style="position:relative">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
         <span class="page-title" id="page-title">Daily Record</span>
         <div class="topbar-right">
+          <button type="button" id="money-pill" onclick="toggleMoneyPanel()"
+            style="display:flex;align-items:center;gap:6px;border:1.5px solid var(--border2);background:#fff;border-radius:99px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);color:var(--text2);white-space:nowrap;line-height:1">
+            <span style="font-size:14px">💰</span><span id="money-pill-val">—</span>
+          </button>
           <span class="sync-badge" id="sync-status">✓ Saved</span>
           <button class="icon-btn" title="Language" onclick="toggleLang()">🌐</button>
+        </div>
+
+        <!-- Money breakdown drop-down -->
+        <div id="money-panel"
+          style="display:none;position:absolute;top:100%;left:12px;right:12px;max-width:520px;margin-left:auto;background:#fff;border:1.5px solid var(--border);border-radius:var(--r2);box-shadow:0 12px 40px rgba(0,80,0,.18);padding:18px;z-index:200">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <strong id="mpe-title" style="font-size:14px;color:var(--text)">💰 Are you making money? (this
+              month)</strong>
+            <span class="tag ts" id="mpe-status">—</span>
+          </div>
+          <div class="g3" style="margin-bottom:0;gap:10px">
+            <div class="metric" style="box-shadow:none;padding:12px 14px">
+              <div class="lbl" id="mpe-cost-lbl">Costs to make 1 egg</div>
+              <div class="val red" id="mpe-cost" style="font-size:20px">—</div>
+            </div>
+            <div class="metric" style="box-shadow:none;padding:12px 14px">
+              <div class="lbl" id="mpe-price-lbl">You sell 1 egg for</div>
+              <div class="val green" id="mpe-price" style="font-size:20px">—</div>
+            </div>
+            <div class="metric" style="box-shadow:none;padding:12px 14px">
+              <div class="lbl" id="mpe-margin-lbl">Profit on each egg</div>
+              <div class="val" id="mpe-margin" style="font-size:20px">—</div>
+            </div>
+          </div>
+          <div id="mpe-note" style="font-size:13px;color:var(--text2);margin-top:12px;line-height:1.6"></div>
         </div>
       </header>
       <main class="content" id="content">
@@ -2094,6 +2123,7 @@
               onchange="selectDate(this.value)" />
           </div>
           <div class="date-nav" id="date-nav"></div>
+
 
           <!-- Day metrics -->
           <div class="g4" id="day-metrics">
@@ -3634,7 +3664,7 @@
     function selectDate(iso) { loadDateRecords(iso); document.getElementById('dash-date-picker').value = iso; }
     function loadDateRecords(iso) {
       const sw = getLang() === 'sw';
-      renderWeekNav(iso);
+      renderWeekNav(iso); renderMoneyPerEgg();
       document.getElementById('dash-date-label').textContent = formatDate(iso);
       document.getElementById('day-cust-title').textContent = (sw ? 'Wateja — ' : 'Customers — ') + shortDate(iso);
       const recs = LS.get('dailyRecords') || {}, rec = recs[iso], daySales = LS.getArr('sales').filter(s => s.date === iso);
@@ -3971,7 +4001,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         '<div class="flow-row"><span class="flow-label">' + L.other + '</span><span class="flow-amt flow-out">−KSh ' + otherCost.toLocaleString() + '</span></div>' +
         '<div style="border-top:2px solid var(--green);margin:12px 0;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:700">' + L.net + '</span><span style="font-size:22px;font-weight:800;color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + '">KSh ' + net.toLocaleString() + '</span></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:var(--green3);border-radius:var(--r);padding:11px;border:1px solid #b0d4b0"><div style="font-size:11px;color:var(--green);font-weight:700">' + L.pay + '</div><div style="font-size:18px;font-weight:800;color:var(--green)">KSh ' + Math.max(0, Math.round(net * 0.2)).toLocaleString() + '</div></div><div style="background:var(--bg3);border-radius:var(--r);padding:11px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--text3);font-weight:700">' + L.save + '</div><div style="font-size:18px;font-weight:800">KSh ' + Math.max(0, Math.round(net * 0.3)).toLocaleString() + '</div></div></div>';
-      renderProfitHistory();
+      renderProfitHistory(); renderMoneyPerEgg();
     }
     function renderProfitHistory() {
       const curYM = TODAY.slice(0, 7), allS = LS.getArr('sales'), allF = LS.getArr('feeds'), allE = LS.getArr('expenses');
@@ -4425,6 +4455,112 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     // ════════════════════════════════════════
     // SIDEBAR STATS
     // ════════════════════════════════════════
+    function renderMoneyPerEgg() {
+      const sw = getLang() === 'sw', ym = TODAY.slice(0, 7), T = id => document.getElementById(id);
+
+      // Eggs collected + feed bags used this month
+      const recs = LS.get('dailyRecords') || {};
+      let eggsCollected = 0, bagsUsed = 0;
+      Object.keys(recs).forEach(d => {
+        if (d.slice(0, 7) !== ym) return;
+        eggsCollected += (recs[d].trays * 30) + (recs[d].loose || 0);
+        bagsUsed += (recs[d].feedUsed || 0);
+      });
+
+      // Latest feed price per bag
+      const feeds = LS.getArr('feeds');
+      const pricePerBag = feeds.length ? ([...feeds].sort((a, b) => b.date.localeCompare(a.date))[0].price || 0) : 0;
+      const feedCost = bagsUsed * pricePerBag;
+      const otherCost = LS.getArr('expenses').filter(e => e.date && e.date.slice(0, 7) === ym).reduce((s, e) => s + (e.amount || 0), 0);
+      const totalCost = feedCost + otherCost;
+
+      // Revenue + eggs sold this month
+      const sales = LS.getArr('sales').filter(s => s.date && s.date.slice(0, 7) === ym);
+      let revenue = 0, eggsSold = 0;
+      sales.forEach(s => { revenue += s.totalAmount || 0; eggsSold += (s.trays * 30) + (s.loose || 0); });
+
+      // Live birds
+      const batches = getFlockBatches();
+      const liveBirds = Math.max(0, batches.reduce((s, b) => s + (b.birds || 0), 0) - LS.getArr('mortality').reduce((s, d) => s + (d.num || 0), 0));
+
+      // Labels
+      if (T('mpe-title')) T('mpe-title').textContent = sw ? '💰 Unapata faida? (mwezi huu)' : '💰 Are you making money? (this month)';
+      if (T('mpe-cost-lbl')) T('mpe-cost-lbl').textContent = sw ? 'Gharama ya yai 1' : 'Costs to make 1 egg';
+      if (T('mpe-price-lbl')) T('mpe-price-lbl').textContent = sw ? 'Unauza yai 1 kwa' : 'You sell 1 egg for';
+      if (T('mpe-margin-lbl')) T('mpe-margin-lbl').textContent = sw ? 'Faida kwa yai' : 'Profit on each egg';
+
+      const pill = T('money-pill'), pillVal = T('money-pill-val'), costEl = T('mpe-cost'), priceEl = T('mpe-price'), marginEl = T('mpe-margin'), statusEl = T('mpe-status'), noteEl = T('mpe-note');
+
+      // Not enough data
+      if (eggsCollected === 0 || totalCost === 0) {
+        if (costEl) costEl.textContent = '—';
+        if (priceEl) priceEl.textContent = '—';
+        if (marginEl) { marginEl.textContent = '—'; marginEl.className = 'val'; }
+        if (statusEl) { statusEl.textContent = sw ? 'Inasubiri data' : 'Need data'; statusEl.className = 'tag ts'; }
+        if (pillVal) pillVal.textContent = sw ? 'Weka data' : 'Set up';
+        if (pill) { pill.style.color = 'var(--text2)'; pill.style.borderColor = 'var(--border2)'; }
+        if (noteEl) noteEl.innerHTML = sw
+          ? 'Rekodi mayai uliyokusanya, chakula kilichotumika (kwenye Rekodi ya Leo), na mauzo mwezi huu ili kuona faida kwa kila yai.'
+          : 'Record eggs collected, feed used (in the Daily Record), and sales this month to see your profit per egg.';
+        return;
+      }
+
+      const costPerEgg = totalCost / eggsCollected;
+      const pricePerEgg = eggsSold > 0 ? revenue / eggsSold : 0;
+      const marginPerEgg = pricePerEgg - costPerEgg;
+      const trayCost = costPerEgg * 30;
+      const profitPerBird = liveBirds > 0 ? (revenue - totalCost) / liveBirds : 0;
+
+      if (costEl) costEl.textContent = 'KSh ' + costPerEgg.toFixed(2);
+      if (priceEl) priceEl.textContent = pricePerEgg > 0 ? 'KSh ' + pricePerEgg.toFixed(2) : '—';
+      if (marginEl) { marginEl.textContent = (marginPerEgg >= 0 ? '+KSh ' : '−KSh ') + Math.abs(marginPerEgg).toFixed(2); marginEl.className = 'val ' + (marginPerEgg >= 0 ? 'green' : 'red'); }
+
+      if (pillVal) pillVal.textContent = pricePerEgg === 0 ? (sw ? 'Hakuna mauzo' : 'No sales') : (marginPerEgg >= 0 ? '+' : '−') + 'KSh ' + Math.abs(marginPerEgg).toFixed(2) + (sw ? '/yai' : '/egg');
+      if (pill) {
+        const good = pricePerEgg > 0 && marginPerEgg >= 0, bad = pricePerEgg > 0 && marginPerEgg < 0;
+        pill.style.color = good ? 'var(--green)' : bad ? 'var(--red)' : 'var(--amber)';
+        pill.style.borderColor = good ? 'var(--green)' : bad ? 'var(--red-border)' : 'var(--amber-border)';
+      }
+      if (statusEl) {
+        if (pricePerEgg === 0) { statusEl.textContent = sw ? 'Hakuna mauzo' : 'No sales yet'; statusEl.className = 'tag ta'; }
+        else if (marginPerEgg >= 0) { statusEl.textContent = sw ? 'Faida ✓' : 'Profit ✓'; statusEl.className = 'tag tg'; }
+        else { statusEl.textContent = sw ? 'Hasara ⚠' : 'Loss ⚠'; statusEl.className = 'tag tr'; }
+      }
+      if (noteEl) {
+        let note;
+        if (sw) {
+          note = 'Yai moja linakugharimu <strong>KSh ' + costPerEgg.toFixed(2) + '</strong>' + (pricePerEgg > 0 ? ', unauza kwa <strong>KSh ' + pricePerEgg.toFixed(2) + '</strong>' : '') + '. Trei (mayai 30) ni kama <strong>KSh ' + trayCost.toFixed(0) + '</strong>. ';
+          if (pricePerEgg > 0 && marginPerEgg < 0) note += 'Unauza chini ya gharama — pandisha bei au punguza gharama ya chakula. ';
+          if (liveBirds > 0) note += 'Mwezi huu: <strong>KSh ' + Math.round(profitPerBird).toLocaleString() + '</strong> kwa kila ndege (ndege ' + liveBirds.toLocaleString() + ').';
+        } else {
+          note = 'Each egg costs you <strong>KSh ' + costPerEgg.toFixed(2) + '</strong>' + (pricePerEgg > 0 ? ', and you sell it for <strong>KSh ' + pricePerEgg.toFixed(2) + '</strong>' : '') + '. A tray (30 eggs) costs about <strong>KSh ' + trayCost.toFixed(0) + '</strong> to make. ';
+          if (pricePerEgg > 0 && marginPerEgg < 0) note += 'You are selling below cost — raise your price or lower feed cost. ';
+          if (liveBirds > 0) note += 'This month: <strong>KSh ' + Math.round(profitPerBird).toLocaleString() + '</strong> profit per bird (' + liveBirds.toLocaleString() + ' birds).';
+        }
+        noteEl.innerHTML = note;
+      }
+    }
+
+    let _moneyPanelTimer = null;
+    function closeMoneyPanel() {
+      const p = document.getElementById('money-panel');
+      if (p) p.style.display = 'none';
+      if (_moneyPanelTimer) { clearTimeout(_moneyPanelTimer); _moneyPanelTimer = null; }
+    }
+    function toggleMoneyPanel() {
+      const p = document.getElementById('money-panel');
+      if (!p) return;
+      if (p.style.display === 'block') { closeMoneyPanel(); return; }
+      p.style.display = 'block';
+      if (_moneyPanelTimer) clearTimeout(_moneyPanelTimer);
+      _moneyPanelTimer = setTimeout(closeMoneyPanel, 6000);
+    }
+    document.addEventListener('click', e => {
+      const panel = document.getElementById('money-panel'), pill = document.getElementById('money-pill');
+      if (panel && panel.style.display === 'block' && pill && !panel.contains(e.target) && !pill.contains(e.target)) closeMoneyPanel();
+    });
+
+
     function updateSidebarStats() {
       const debtors = LS.getArr('debtors').filter(d => d.owed > 0), total = debtors.reduce((s, d) => s + (d.owed || 0), 0);
       const el = document.getElementById('sb-debt'); if (el) { el.textContent = 'KSh ' + total.toLocaleString(); el.className = 'v' + (total > 0 ? ' warn' : ''); }
