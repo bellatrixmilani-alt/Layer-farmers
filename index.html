@@ -1739,6 +1739,7 @@
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCankCl3cQC3I0-b3634gi6_UXbTi-2VpU",
@@ -1751,6 +1752,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
     db.enablePersistence().catch(err => {
       console.log('Offline persistence unavailable:', err.code);
@@ -1947,6 +1949,32 @@
             <label>Your phone number</label>
             <input type="tel" id="cf-phone" placeholder="e.g. 0722000111" inputmode="numeric" />
           </div>
+
+          <!-- Phone verification (SMS) -->
+          <div id="verify-block" class="login-field"
+            style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+            <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600">
+              📱 Verify your phone — we'll text you a 6-digit code.
+            </div>
+            <button type="button" class="login-btn"
+              style="background:var(--green3);color:var(--green);border:1.5px solid var(--green);margin:0 0 10px"
+              id="send-code-btn" onclick="sendOtp()">Send code</button>
+
+            <div id="otp-entry" style="display:none">
+              <label>Enter the 6-digit code</label>
+              <input type="tel" id="cf-otp" placeholder="123456" maxlength="6" inputmode="numeric" />
+              <button type="button" class="login-btn" style="margin-top:10px" id="verify-code-btn"
+                onclick="verifyOtp()">Verify code</button>
+            </div>
+
+            <div id="verify-ok" style="display:none;font-size:13px;color:var(--green);font-weight:700;margin-top:8px">
+              ✓ Phone verified
+            </div>
+            <div id="verify-err" class="login-err" style="margin-top:6px"></div>
+          </div>
+
+          <!-- invisible reCAPTCHA target (required by Firebase) -->
+          <div id="recaptcha-container"></div>
           <div class="login-field">
             <label>Choose a 4-digit PIN</label>
             <input type="password" id="cf-pin" placeholder="••••" maxlength="4" inputmode="numeric" />
@@ -3355,6 +3383,55 @@
     }
 
     function setupBack() { showStep(setupStep > 1 ? setupStep - 1 : 1); }
+    // ── Phone verification (SMS OTP) ──
+    let _recaptcha = null, _otpConfirm = null, _phoneVerified = false, _verifiedPhone = '';
+
+    function _toE164(local) {
+      const c = String(local || '').replace(/\D/g, '');
+      if (c.startsWith('254')) return '+' + c;
+      if (c.startsWith('0')) return '+254' + c.slice(1);
+      return '+254' + c;
+    }
+
+    async function sendOtp() {
+      const errEl = document.getElementById('verify-err');
+      const phone = document.getElementById('cf-phone').value.trim();
+      if (phone.length < 9) { errEl.textContent = 'Enter your phone number first.'; return; }
+      errEl.textContent = '';
+      try {
+        if (!_recaptcha) {
+          _recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+        }
+        const e164 = _toE164(phone);
+        document.getElementById('send-code-btn').textContent = 'Sending…';
+        _otpConfirm = await auth.signInWithPhoneNumber(e164, _recaptcha);
+        document.getElementById('otp-entry').style.display = 'block';
+        document.getElementById('send-code-btn').textContent = 'Resend code';
+      } catch (e) {
+        console.log('OTP send failed:', e);
+        errEl.textContent = 'Could not send code. Check the number and try again.';
+        document.getElementById('send-code-btn').textContent = 'Send code';
+      }
+    }
+
+    async function verifyOtp() {
+      const errEl = document.getElementById('verify-err');
+      const code = document.getElementById('cf-otp').value.trim();
+      if (!_otpConfirm) { errEl.textContent = 'Tap "Send code" first.'; return; }
+      if (code.length < 6) { errEl.textContent = 'Enter the 6-digit code.'; return; }
+      try {
+        const result = await _otpConfirm.confirm(code);
+        _phoneVerified = true;
+        _verifiedPhone = result.user.phoneNumber;
+        document.getElementById('otp-entry').style.display = 'none';
+        document.getElementById('verify-ok').style.display = 'block';
+        document.getElementById('send-code-btn').style.display = 'none';
+        errEl.textContent = '';
+      } catch (e) {
+        console.log('OTP verify failed:', e);
+        errEl.textContent = 'Wrong or expired code. Try again.';
+      }
+    }
 
     async function createFarm() {
       const name = document.getElementById('cf-name').value.trim();
@@ -3367,6 +3444,8 @@
 
       if (!phone || phone.length < 9) { err.textContent = 'Invalid phone number.'; return; }
       if (pin.length < 4) { err.textContent = 'PIN must be 4 digits.'; return; }
+      if (!_phoneVerified) { err.textContent = 'Please verify your phone with the SMS code first.'; return; }
+      if (_toE164(phone) !== _verifiedPhone) { err.textContent = 'Verify the same number you typed above.'; return; }
 
       const farms = await getFarms();
       if (farms.find(f => f.phone === phone)) { err.textContent = 'Phone already registered.'; return; }
