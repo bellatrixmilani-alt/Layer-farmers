@@ -3168,13 +3168,13 @@
 
     function importBackup(file) {
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = async e => {
         let backup;
         try { backup = JSON.parse(e.target.result); }
         catch (err) { alert('Could not read this file — it may be corrupted.'); return; }
         if (!backup || backup.app !== 'KukuFarmManager' || !backup.farm) { alert('This is not a valid Kuku Farm backup file.'); return; }
         if (!confirm('Restore data for "' + (backup.farm.name || 'farm') + '"? This overwrites that farm\'s data on this device.')) return;
-        const farms = getFarms();
+        const farms = await getFarms();
         const idx = farms.findIndex(f => f.phone === backup.farm.phone);
         if (idx >= 0) farms[idx] = backup.farm; else farms.push(backup.farm);
         LS.set('farms', farms, false);
@@ -3235,7 +3235,7 @@
       if (f) { errEl.textContent = ''; loginAs(f); }
       else errEl.textContent = 'Wrong phone or PIN. Demo: 0700000000 / 1234';
     }
-    function showCreateView() { document.getElementById('signin-view').style.display = 'none'; document.getElementById('create-view').style.display = 'block'; setupStep = 1; renderSetupDots(); showStep(1); }
+    function showCreateView() { document.getElementById('signin-view').style.display = 'none'; document.getElementById('create-view').style.display = 'block'; setupStep = 1; showStep(1); }
     function showSigninView() { document.getElementById('create-view').style.display = 'none'; document.getElementById('signin-view').style.display = 'block'; }
     let setupStep = 1;
     let setupBatches = [];
