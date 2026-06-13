@@ -2128,6 +2128,7 @@
           <!-- Day metrics -->
           <div class="g4" id="day-metrics">
             <div class="metric" style="cursor:pointer;border:1.5px dashed var(--green4)" onclick="openDailyModal()">
+              <div class="lbl">Eggs Collected</div>
               <div class="val green" id="dm-eggs">—</div>
               <div class="sub" id="dm-eggs-sub">No production recorded</div>
             </div>
@@ -2835,7 +2836,10 @@
           <div class="card g1">
             <div class="sec-hd">
               <h2 style="margin:0">Your Flock Batches</h2>
-              <button class="btn btn-sm btn-primary" onclick="openAddFlockModal()">+ Add Flock Batch</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-sm btn-danger" onclick="deleteFlockBatch()">🗑 Delete selected</button>
+                <button class="btn btn-sm btn-primary" onclick="openAddFlockModal()">+ Add Flock Batch</button>
+              </div>
             </div>
             <div class="vac-flock-tab" id="flock-tabs"></div>
             <div id="vac-flock-info" style="font-size:13px;color:var(--text3)">No flock batches added yet. Add your
@@ -4030,6 +4034,21 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       if (!name) { alert('Enter a batch name.'); return; } if (!birds) { alert('Enter number of birds.'); return; } if (!dod) { alert('Enter arrival date.'); return; }
       const batch = { id: getNextId(), name, birds, dod, breed }; LS.pushArr('flockBatches', batch); activeBatchId = batch.id; closeModal('flock-modal'); renderFlockBatchTabs(); populateMortFlockDropdown();
     }
+    function deleteFlockBatch() {
+      const batches = getFlockBatches();
+      const sw = getLang() === 'sw';
+      if (!batches.length) { alert(sw ? 'Hakuna kundi la kufuta.' : 'No flock batch to delete.'); return; }
+      const batch = batches.find(b => b.id === activeBatchId) || batches[0];
+      if (!batch) return;
+      if (!confirm((sw ? 'Futa kundi "' : 'Delete batch "') + batch.name + (sw ? '"? Hii haiwezi kutenduliwa.' : '"? This cannot be undone.'))) return;
+      const remaining = batches.filter(b => b.id !== batch.id);
+      LS.set('flockBatches', remaining);
+      activeBatchId = remaining.length ? remaining[0].id : null;
+      renderFlockBatchTabs();
+      populateMortFlockDropdown();
+      renderFlockMetrics();
+      updateVacBadge();
+    }
     function renderFlockBatchTabs() {
       const batches = getFlockBatches(), el = document.getElementById('flock-tabs'), info = document.getElementById('vac-flock-info');
       if (!batches.length) { el.innerHTML = ''; if (info) info.innerHTML = 'No flock batches. Add one above.'; return; }
@@ -4155,15 +4174,17 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     // ════════════════════════════════════════
     const VACCINE_SCHEDULE = [
       { name: "Marek's disease", nameSw: "Ugonjwa wa Marek", day: 1, note: 'At hatchery (given by supplier)', method: 'Injection' },
-      { name: 'Newcastle + Bronchitis (1st)', nameSw: 'Newcastle + Bronchitis (ya 1)', day: 7, note: 'Eye or nose drop', method: 'Eye/nose drop' },
+      { name: 'Newcastle + Bronchitis (1st)', nameSw: 'Newcastle + Bronchitis (ya 1)', day: 7, note: 'Eye or nose drop · e.g. Mevac ND LaSota', method: 'Eye/nose drop' },
       { name: 'Gumboro — stomach disease (1st)', nameSw: 'Gumboro — ugonjwa wa tumbo (ya 1)', day: 14, note: 'In drinking water', method: 'Drinking water' },
       { name: 'Gumboro — stomach disease (2nd)', nameSw: 'Gumboro — ugonjwa wa tumbo (ya 2)', day: 18, note: 'In drinking water', method: 'Drinking water' },
-      { name: 'Newcastle + Bronchitis (2nd)', nameSw: 'Newcastle + Bronchitis (ya 2)', day: 21, note: 'In drinking water', method: 'Drinking water' },
+      { name: 'Newcastle + Bronchitis (2nd)', nameSw: 'Newcastle + Bronchitis (ya 2)', day: 21, note: 'In drinking water · e.g. Mevac ND LaSota', method: 'Drinking water' },
       { name: 'Fowl pox', nameSw: 'Ndui ya kuku', day: 28, note: 'Wing stab', method: 'Wing stab' },
+      { name: 'Infectious Coryza', nameSw: 'Coryza (mafua ya kuku)', day: 35, note: 'CORYVAC — injection ~week 5 (give earlier where coryza is common in your area)', method: 'Injection' },
       { name: 'Fowl typhoid', nameSw: 'Typhoid ya kuku', day: 42, note: 'Injection', method: 'Injection' },
       { name: 'Deworming (1st)', nameSw: 'Kuondoa minyoo (ya 1)', day: 56, note: '8 weeks — in drinking water', method: 'Drinking water' },
       { name: 'Fowl pox (booster)', nameSw: 'Ndui ya kuku (nyongeza)', day: 63, note: 'Wing stab', method: 'Wing stab' },
-      { name: 'Newcastle + Bronchitis (pre-lay)', nameSw: 'Newcastle + Bronchitis (kabla ya kutaga)', day: 112, note: '~16 weeks — before laying starts', method: 'Drinking water' },
+      { name: 'Newcastle + Bronchitis (pre-lay)', nameSw: 'Newcastle + Bronchitis (kabla ya kutaga)', day: 112, note: '~16 weeks — before laying · e.g. MEVAC IB+ND (long-lasting)', method: 'Drinking water' },
+      { name: 'Fowl cholera', nameSw: 'Kolera ya kuku', day: 115, note: 'Injection ~weeks 16–18', method: 'Injection' },
       { name: 'Egg Drop Syndrome (EDS)', nameSw: 'Kupungua kwa mayai (EDS)', day: 119, note: '~17 weeks', method: 'Injection' },
       { name: 'Newcastle (laying booster)', nameSw: 'Newcastle (nyongeza ya kutaga)', day: 196, note: 'Repeat every ~10 weeks during laying', method: 'Drinking water' }
     ];
@@ -4455,6 +4476,63 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     // ════════════════════════════════════════
     // SIDEBAR STATS
     // ════════════════════════════════════════
+    function renderBreakEven() {
+      if (!document.getElementById('break-even-card')) return;
+      const ym = TODAY.slice(0, 7), recs = LS.get('dailyRecords') || {};
+      let eggs = 0, bags = 0;
+      Object.keys(recs).forEach(d => { if (d.slice(0, 7) === ym) { eggs += (recs[d].trays * 30) + (recs[d].loose || 0); bags += (recs[d].feedUsed || 0); } });
+      const feeds = LS.getArr('feeds');
+      const price = feeds.length ? ([...feeds].sort((a, b) => b.date.localeCompare(a.date))[0].price || 0) : 0;
+      const other = LS.getArr('expenses').filter(e => e.date && e.date.slice(0, 7) === ym).reduce((s, e) => s + (e.amount || 0), 0);
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || 0; };
+      set('be-feedprice', price); set('be-bags', bags); set('be-other', other); set('be-eggs', eggs);
+      calcBreakEven();
+    }
+
+    function calcBreakEven() {
+      const sw = getLang() === 'sw', g = id => +((document.getElementById(id) || {}).value) || 0, T = id => document.getElementById(id);
+      if (T('be-title')) T('be-title').textContent = sw ? '⚖️ Kikokotoo cha kuvunja sare' : '⚖️ Break-even calculator';
+      if (T('be-intro')) T('be-intro').textContent = sw ? 'Bei ya chini kabisa ya yai inayolipia gharama zako. Badilisha bei ya chakula kuona jinsi chakula kinavyokula faida.' : 'The lowest egg price that still covers your costs. Change the feed price to see how rising feed eats your profit.';
+      if (T('be-feedprice-lbl')) T('be-feedprice-lbl').textContent = sw ? 'Bei ya chakula kwa mfuko (KSh)' : 'Feed price per bag (KSh)';
+      if (T('be-bags-lbl')) T('be-bags-lbl').textContent = sw ? 'Mifuko iliyotumika mwezi huu' : 'Bags used this month';
+      if (T('be-other-lbl')) T('be-other-lbl').textContent = sw ? 'Gharama nyingine mwezi huu (KSh)' : 'Other costs this month (KSh)';
+      if (T('be-eggs-lbl')) T('be-eggs-lbl').textContent = sw ? 'Mayai yaliyozalishwa mwezi huu' : 'Eggs produced this month';
+      if (T('be-egg-lbl')) T('be-egg-lbl').textContent = sw ? 'Kuvunja sare kwa yai' : 'Break-even per egg';
+      if (T('be-tray-lbl')) T('be-tray-lbl').textContent = sw ? 'Kuvunja sare kwa trei' : 'Break-even per tray';
+      if (T('be-current-lbl')) T('be-current-lbl').textContent = sw ? 'Unauza yai kwa' : 'You sell each egg for';
+      if (T('be-reset')) T('be-reset').textContent = sw ? '↺ Rudisha namba zangu halisi' : '↺ Reset to my real numbers';
+
+      const feedPrice = g('be-feedprice'), bags = g('be-bags'), other = g('be-other'), eggs = g('be-eggs');
+      const feedCost = feedPrice * bags, totalCost = feedCost + other;
+      const beEgg = eggs > 0 ? totalCost / eggs : 0, beTray = beEgg * 30;
+      const ym = TODAY.slice(0, 7), sales = LS.getArr('sales').filter(s => s.date && s.date.slice(0, 7) === ym);
+      let rev = 0, sold = 0; sales.forEach(s => { rev += s.totalAmount || 0; sold += (s.trays * 30) + (s.loose || 0); });
+      const curEgg = sold > 0 ? rev / sold : 0;
+      const feedPct = totalCost > 0 ? Math.round(feedCost / totalCost * 100) : 0;
+
+      const eggEl = T('be-egg'), trayEl = T('be-tray'), curEl = T('be-current'), statusEl = T('be-status'), vEl = T('be-verdict');
+      if (eggEl) eggEl.textContent = beEgg > 0 ? 'KSh ' + beEgg.toFixed(2) : '—';
+      if (trayEl) trayEl.textContent = beEgg > 0 ? 'KSh ' + beTray.toFixed(0) : '—';
+      if (curEl) curEl.textContent = curEgg > 0 ? 'KSh ' + curEgg.toFixed(2) : '—';
+
+      if (!eggs || !totalCost) {
+        if (statusEl) { statusEl.textContent = sw ? 'Weka namba' : 'Enter numbers'; statusEl.className = 'tag ts'; }
+        if (vEl) { vEl.className = 'alert al-blue'; vEl.style.display = 'flex'; vEl.innerHTML = '<span class="alert-ico">ℹ</span><div>' + (sw ? 'Jaza gharama na mayai ili kuona bei ya chini kabisa.' : 'Fill in your costs and eggs to see your minimum safe price.') + '</div>'; }
+        return;
+      }
+      const margin = curEgg - beEgg;
+      if (!curEgg) {
+        if (statusEl) { statusEl.textContent = sw ? 'Hakuna mauzo' : 'No sales'; statusEl.className = 'tag ta'; }
+        if (vEl) { vEl.className = 'alert al-amber'; vEl.style.display = 'flex'; vEl.innerHTML = '<span class="alert-ico">⚠</span><div>' + (sw ? 'Lazima uuze kila yai juu ya <strong>KSh ' + beEgg.toFixed(2) + '</strong> (trei juu ya <strong>KSh ' + beTray.toFixed(0) + '</strong>) ili kuvunja sare. Chakula ni ' + feedPct + '% ya gharama.' : 'You must sell each egg above <strong>KSh ' + beEgg.toFixed(2) + '</strong> (a tray above <strong>KSh ' + beTray.toFixed(0) + '</strong>) to break even. Feed is ' + feedPct + '% of your cost.') + '</div>'; }
+      } else if (margin >= 0) {
+        if (statusEl) { statusEl.textContent = sw ? 'Salama ✓' : 'Safe ✓'; statusEl.className = 'tag tg'; }
+        if (vEl) { vEl.className = 'alert al-green'; vEl.style.display = 'flex'; vEl.innerHTML = '<span class="alert-ico">✓</span><div>' + (sw ? 'Salama. Unauza kwa <strong>KSh ' + curEgg.toFixed(2) + '</strong>, kuvunja sare ni <strong>KSh ' + beEgg.toFixed(2) + '</strong> — nafasi ya <strong>KSh ' + margin.toFixed(2) + '</strong> kwa yai. Chakula ni ' + feedPct + '% ya gharama.' : 'Safe. You sell at <strong>KSh ' + curEgg.toFixed(2) + '</strong>, break-even is <strong>KSh ' + beEgg.toFixed(2) + '</strong> — a cushion of <strong>KSh ' + margin.toFixed(2) + '</strong> per egg. Feed is ' + feedPct + '% of your cost.') + '</div>'; }
+      } else {
+        if (statusEl) { statusEl.textContent = sw ? 'Hatari ⚠' : 'Danger ⚠'; statusEl.className = 'tag tr'; }
+        if (vEl) { vEl.className = 'alert al-red'; vEl.style.display = 'flex'; vEl.innerHTML = '<span class="alert-ico">🚨</span><div>' + (sw ? 'Hatari. Unauza kwa <strong>KSh ' + curEgg.toFixed(2) + '</strong> lakini unahitaji <strong>KSh ' + beEgg.toFixed(2) + '</strong> — unapoteza <strong>KSh ' + Math.abs(margin).toFixed(2) + '</strong> kwa kila yai. Pandisha bei au punguza chakula.' : 'Danger. You sell at <strong>KSh ' + curEgg.toFixed(2) + '</strong> but need <strong>KSh ' + beEgg.toFixed(2) + '</strong> to break even — you lose <strong>KSh ' + Math.abs(margin).toFixed(2) + '</strong> per egg. Raise your price or cut feed cost.') + '</div>'; }
+      }
+    }
+
     function renderMoneyPerEgg() {
       const sw = getLang() === 'sw', ym = TODAY.slice(0, 7), T = id => document.getElementById(id);
 
@@ -4605,7 +4683,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       document.getElementById('page-title').textContent = T[id] || id;
       if (id === 'vaccines') renderVaccinePage();
       if (id === 'debtors') renderDebtorPage();
-      if (id === 'dashboard') renderDashboard();
+      if (id === 'dashboard') { renderDashboard(); renderBreakEven(); }
       if (id === 'flock') { renderFlockMetrics(); populateMortFlockDropdown(); }
       if (id === 'suppliers') { renderSupplierScores(); renderSupplierLog(); }
       if (id === 'settings') { applySettingsInputs(); applyOpeningBalancesInputs(); }
