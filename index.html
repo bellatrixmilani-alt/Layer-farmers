@@ -1861,10 +1861,32 @@
         <button class="login-btn" onclick="doLogin()">Sign In →</button>
         <div class="login-err" id="login-err"></div>
         <div class="login-switch" onclick="showCreateView()">New? Create your farm →</div>
+        <div class="login-switch" onclick="showRecoverPanel()">📱 New phone? Restore your farm →</div>
         <div class="login-switch" onclick="document.getElementById('login-backup-input').click()">♻ Restore from a
           backup file</div>
         <input type="file" id="login-backup-input" accept="application/json" style="display:none"
           onchange="if(this.files[0]) importBackup(this.files[0])" />
+        <div id="recover-panel"
+          style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:12px">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600">
+            📱 Restore your farm on this phone — we'll text a 6-digit code to confirm you own the number.
+          </div>
+          <div class="login-field">
+            <label>Phone number</label>
+            <input type="tel" id="rec-phone" placeholder="e.g. 0712345678" inputmode="numeric" />
+          </div>
+          <button type="button" class="login-btn"
+            style="background:var(--green3);color:var(--green);border:1.5px solid var(--green);margin:0 0 10px"
+            id="rec-send-btn" onclick="recoverSendOtp()">Send code</button>
+          <div id="rec-otp-entry" style="display:none">
+            <label>Enter the 6-digit code</label>
+            <input type="tel" id="rec-otp" placeholder="123456" maxlength="6" inputmode="numeric" />
+            <button type="button" class="login-btn" style="margin-top:10px" onclick="recoverVerifyOtp()">Verify &amp;
+              restore</button>
+          </div>
+          <div id="rec-err" class="login-err" style="margin-top:6px"></div>
+          <div id="recaptcha-container-rec"></div>
+        </div>
         <div class="login-hint">Demo: 0700000000 · PIN 1234</div>
       </div>
 
@@ -3261,7 +3283,7 @@
       }
 
       if (f) { errEl.textContent = ''; loginAs(f); }
-      else errEl.textContent = 'Wrong phone or PIN. Demo: 0700000000 / 1234';
+      else errEl.textContent = 'Wrong phone/PIN. On a new phone? Tap "Restore your farm". Demo: 0700000000 / 1234';
     }
     function showCreateView() { document.getElementById('signin-view').style.display = 'none'; document.getElementById('create-view').style.display = 'block'; setupStep = 1; showStep(1); }
     function showSigninView() { document.getElementById('create-view').style.display = 'none'; document.getElementById('signin-view').style.display = 'block'; }
@@ -3430,6 +3452,58 @@
       } catch (e) {
         console.log('OTP verify failed:', e);
         errEl.textContent = 'Wrong or expired code. Try again.';
+      }
+    }
+    // ── New-device recovery: verify phone by SMS, then pull farm from cloud ──
+    let _recaptchaRec = null, _otpConfirmRec = null;
+
+    function showRecoverPanel() {
+      const p = document.getElementById('recover-panel');
+      if (!p) return;
+      p.style.display = 'block';
+      const typed = document.getElementById('login-user').value.trim();
+      if (typed) document.getElementById('rec-phone').value = typed;
+    }
+
+    async function recoverSendOtp() {
+      const errEl = document.getElementById('rec-err');
+      const phone = document.getElementById('rec-phone').value.trim();
+      if (phone.length < 9) { errEl.textContent = 'Enter your phone number first.'; return; }
+      errEl.textContent = '';
+      try {
+        if (!_recaptchaRec) {
+          _recaptchaRec = new firebase.auth.RecaptchaVerifier('recaptcha-container-rec', { size: 'invisible' });
+        }
+        document.getElementById('rec-send-btn').textContent = 'Sending…';
+        _otpConfirmRec = await auth.signInWithPhoneNumber(_toE164(phone), _recaptchaRec);
+        document.getElementById('rec-otp-entry').style.display = 'block';
+        document.getElementById('rec-send-btn').textContent = 'Resend code';
+      } catch (e) {
+        console.log('Recovery OTP send failed:', e);
+        errEl.textContent = 'Could not send code. Check the number and try again.';
+        document.getElementById('rec-send-btn').textContent = 'Send code';
+      }
+    }
+
+    async function recoverVerifyOtp() {
+      const errEl = document.getElementById('rec-err');
+      const code = document.getElementById('rec-otp').value.trim();
+      const phone = document.getElementById('rec-phone').value.trim();
+      if (!_otpConfirmRec) { errEl.textContent = 'Tap "Send code" first.'; return; }
+      if (code.length < 6) { errEl.textContent = 'Enter the 6-digit code.'; return; }
+      try {
+        await _otpConfirmRec.confirm(code);      // now signed in to Firebase as this phone
+        const profile = await fetchCloudProfile(phone);
+        if (!profile) { errEl.textContent = 'No saved farm found for this number.'; return; }
+        const farms = await getFarms();
+        const idx = farms.findIndex(f => f.phone === profile.phone);
+        if (idx >= 0) farms[idx] = profile; else farms.push(profile);
+        LS.set('farms', farms, false);
+        errEl.textContent = '';
+        loginAs(profile);                        // cloudLoad pulls all their data down
+      } catch (e) {
+        console.log('Recovery verify failed:', e);
+        errEl.textContent = 'Wrong/expired code, or no access. Try again.';
       }
     }
 
