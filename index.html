@@ -1759,6 +1759,7 @@
     });
 
     async function cloudSync(phone, key, value) {
+      return; // Local-first: cloud disabled
       try {
         await db.collection('farms').doc(phone)
           .collection('data').doc(key)
@@ -1769,6 +1770,7 @@
     }
 
     async function cloudSyncFarm(farm) {
+      return; // Local-first: cloud disabled
       if (!farm || !farm.phone) return;
       try {
         await db.collection('farms').doc(farm.phone).collection('meta').doc('profile')
@@ -1797,6 +1799,7 @@
         .join('');
     }
     async function fetchCloudProfile(phone) {
+      return null; // Local-first: cloud disabled
       try {
         const snap = await db.collection('farms').doc(phone).collection('meta').doc('profile').get();
         return snap.exists ? snap.data() : null;
@@ -1804,6 +1807,7 @@
     }
 
     async function cloudLoad(phone) {
+      return; // Local-first: cloud disabled
       try {
         const snap = await db.collection('farms').doc(phone)
           .collection('data').get();
@@ -1861,15 +1865,15 @@
         <button class="login-btn" onclick="doLogin()">Sign In →</button>
         <div class="login-err" id="login-err"></div>
         <div class="login-switch" onclick="showCreateView()">New? Create your farm →</div>
-        <div class="login-switch" onclick="showRecoverPanel()">📱 New phone? Restore your farm →</div>
+        <div class="login-switch" onclick="showRecoverPanel()">🔑 Forgot your PIN? →</div>
         <div class="login-switch" onclick="document.getElementById('login-backup-input').click()">♻ Restore from a
           backup file</div>
         <input type="file" id="login-backup-input" accept="application/json" style="display:none"
           onchange="if(this.files[0]) importBackup(this.files[0])" />
         <div id="recover-panel"
           style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:12px">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600">
-            📱 Restore your farm on this phone — we'll text a 6-digit code to confirm you own the number.
+          <div id="recover-intro" style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600">
+            🔑 Forgot your PIN? Enter your phone number and answer your security question to set a new PIN.
           </div>
           <div class="login-field">
             <label>Phone number</label>
@@ -1877,15 +1881,22 @@
           </div>
           <button type="button" class="login-btn"
             style="background:var(--green3);color:var(--green);border:1.5px solid var(--green);margin:0 0 10px"
-            id="rec-send-btn" onclick="recoverSendOtp()">Send code</button>
-          <div id="rec-otp-entry" style="display:none">
-            <label>Enter the 6-digit code</label>
-            <input type="tel" id="rec-otp" placeholder="123456" maxlength="6" inputmode="numeric" />
-            <button type="button" class="login-btn" style="margin-top:10px" onclick="recoverVerifyOtp()">Verify &amp;
-              restore</button>
+            id="rec-find-btn" onclick="recoverFindFarm()">Continue</button>
+          <div id="rec-question-entry" style="display:none">
+            <label id="rec-question-label">Security question</label>
+            <input type="text" id="rec-answer" placeholder="Your answer" />
+            <button type="button" class="login-btn" style="margin-top:10px" onclick="recoverVerifyAnswer()">Verify
+              answer</button>
+          </div>
+          <div id="rec-newpin-entry" style="display:none;margin-top:10px">
+            <label>Choose a new 4-digit PIN</label>
+            <input type="password" id="rec-new-pin" placeholder="••••" maxlength="4" inputmode="numeric" />
+            <label style="margin-top:10px">Confirm new PIN</label>
+            <input type="password" id="rec-new-pin2" placeholder="••••" maxlength="4" inputmode="numeric" />
+            <button type="button" class="login-btn" style="margin-top:10px" onclick="recoverSetNewPin()">Save new PIN
+              &amp; sign in →</button>
           </div>
           <div id="rec-err" class="login-err" style="margin-top:6px"></div>
-          <div id="recaptcha-container-rec"></div>
         </div>
         <div class="login-hint">Demo: 0700000000 · PIN 1234</div>
       </div>
@@ -1972,31 +1983,34 @@
             <input type="tel" id="cf-phone" placeholder="e.g. 0722000111" inputmode="numeric" />
           </div>
 
-          <!-- Phone verification (SMS) -->
-          <div id="verify-block" class="login-field"
-            style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px">
-            <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600">
-              📱 Verify your phone — we'll text you a 6-digit code.
-            </div>
-            <button type="button" class="login-btn"
-              style="background:var(--green3);color:var(--green);border:1.5px solid var(--green);margin:0 0 10px"
-              id="send-code-btn" onclick="sendOtp()">Send code</button>
-
+          <!-- Phone verification (SMS) — disabled in local-first build -->
+          <div id="verify-block" class="login-field" style="display:none">
             <div id="otp-entry" style="display:none">
-              <label>Enter the 6-digit code</label>
-              <input type="tel" id="cf-otp" placeholder="123456" maxlength="6" inputmode="numeric" />
-              <button type="button" class="login-btn" style="margin-top:10px" id="verify-code-btn"
-                onclick="verifyOtp()">Verify code</button>
+              <input type="tel" id="cf-otp" />
+              <button type="button" id="verify-code-btn"></button>
             </div>
-
-            <div id="verify-ok" style="display:none;font-size:13px;color:var(--green);font-weight:700;margin-top:8px">
-              ✓ Phone verified
-            </div>
-            <div id="verify-err" class="login-err" style="margin-top:6px"></div>
+            <button type="button" id="send-code-btn"></button>
+            <div id="verify-ok"></div>
+            <div id="verify-err"></div>
           </div>
 
-          <!-- invisible reCAPTCHA target (required by Firebase) -->
+          <!-- invisible reCAPTCHA target (kept, unused) -->
           <div id="recaptcha-container"></div>
+
+          <div class="login-field">
+            <label>Security question (used to reset your PIN)</label>
+            <select id="cf-secq">
+              <option>What is your mother's first name?</option>
+              <option>What primary school did you attend?</option>
+              <option>What is the name of your first customer?</option>
+              <option>What town were you born in?</option>
+              <option>What is your favourite animal?</option>
+            </select>
+          </div>
+          <div class="login-field">
+            <label>Your secret answer (remember this!)</label>
+            <input type="text" id="cf-seca" placeholder="Your answer" />
+          </div>
           <div class="login-field">
             <label>Choose a 4-digit PIN</label>
             <input type="password" id="cf-pin" placeholder="••••" maxlength="4" inputmode="numeric" />
@@ -2033,6 +2047,7 @@
       </div><!-- end create-view -->
     </div><!-- end login-box -->
   </div><!-- end login-screen -->
+
   <!-- APP -->
   <div class="app" id="app" style="display:none">
     <aside class="sidebar" id="sidebar">
@@ -2127,7 +2142,8 @@
 
           <!-- Day metrics -->
           <div class="g4" id="day-metrics">
-            <div class="metric" style="cursor:pointer;border:1.5px dashed var(--green4)" onclick="openDailyModal()">
+            <div class="metric" style="cursor:pointer;outline:2px dashed var(--green4);outline-offset:-2px"
+              onclick="openDailyModal()">
               <div class="lbl">Eggs Collected</div>
               <div class="val green" id="dm-eggs">—</div>
               <div class="sub" id="dm-eggs-sub">No production recorded</div>
@@ -3005,14 +3021,17 @@
                   maxlength="4" inputmode="numeric" placeholder="••••" /></div>
               <div class="form-group"><label>Confirm new PIN</label><input type="password" id="set-new-pin2"
                   maxlength="4" inputmode="numeric" placeholder="••••" /></div>
-              <div class="form-actions"><button class="btn btn-primary" onclick="changePin()">Update PIN</button></div>
+              <div class="form-actions"><button class="btn btn-primary" onclick="changePin()">Update PIN</button>
+              </div>
               <div class="msg-banner" id="set-pin-msg"></div>
             </div>
             <div class="card">
               <h2>Money Accounts</h2>
-              <div id="money-accounts-desc" style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter the money
+              <div id="money-accounts-desc" style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter the
+                money
                 you currently have in
-                each account. The app adds your sales and subtracts your purchases automatically, and blocks a purchase
+                each account. The app adds your sales and subtracts your purchases automatically, and blocks a
+                purchase
                 when the money isn't there.</div>
               <div class="form-row">
                 <div class="form-group"><label>Cash on hand (KSh)</label><input type="number" id="ob-cash"
@@ -3278,7 +3297,7 @@
       getArr(k) { return this.get(k) || []; },
       pushArr(k, i) { const a = this.getArr(k); a.push(i); this.set(k, a); return a; }
     };
-    function syncSaved() { const el = document.getElementById('sync-status'); if (!el || !appReady) return; el.textContent = '✓ Saved'; el.classList.add('show'); clearTimeout(_syncT); _syncT = setTimeout(() => el.classList.remove('show'), 3000); }
+    function syncSaved() { const el = document.getElementById('sync-status'); if (!el || !appReady) return; el.textContent = getLang() === 'sw' ? '✓ Imehifadhiwa' : '✓ Saved'; el.classList.add('show'); clearTimeout(_syncT); _syncT = setTimeout(() => el.classList.remove('show'), 3000); }
     function getNextId() { let id = LS.get('_nid') || 1; LS.set('_nid', id + 1); return id; }
 
     // offline
@@ -3328,12 +3347,13 @@
       document.querySelectorAll('.step-view').forEach(s => s.classList.remove('active'));
       document.getElementById('sv-' + n).classList.add('active');
       setupStep = n;
-      const labels = ['Farm Details', 'Flock Batches', 'Account & PIN', 'Review & Create'];
+      const _sw = getLang() === 'sw';
+      const labels = _sw ? ['Maelezo ya Shamba', 'Makundi ya Kuku', 'Akaunti & PIN', 'Kagua & Unda'] : ['Farm Details', 'Flock Batches', 'Account & PIN', 'Review & Create'];
       const bar = document.getElementById('setup-progress-bar');
       const lbl = document.getElementById('step-label');
       const desc = document.getElementById('step-desc');
       if (bar) bar.style.width = (n / 4 * 100) + '%';
-      if (lbl) lbl.textContent = 'Step ' + n + ' of 4';
+      if (lbl) lbl.textContent = (_sw ? 'Hatua ' : 'Step ') + n + (_sw ? ' kati ya 4' : ' of 4');
       if (desc) desc.textContent = labels[n - 1] || '';
     }
 
@@ -3488,8 +3508,8 @@
         errEl.textContent = 'Wrong or expired code. Try again.';
       }
     }
-    // ── New-device recovery: verify phone by SMS, then pull farm from cloud ──
-    let _recaptchaRec = null, _otpConfirmRec = null;
+    // ── // ── PIN recovery via security question (no SMS) ──
+    let _recoverProfile = null;
 
     function showRecoverPanel() {
       const p = document.getElementById('recover-panel');
@@ -3499,48 +3519,52 @@
       if (typed) document.getElementById('rec-phone').value = typed;
     }
 
-    async function recoverSendOtp() {
+    async function recoverFindFarm() {
       const errEl = document.getElementById('rec-err');
       const phone = document.getElementById('rec-phone').value.trim();
       if (phone.length < 9) { errEl.textContent = 'Enter your phone number first.'; return; }
       errEl.textContent = '';
-      try {
-        if (!_recaptchaRec) {
-          _recaptchaRec = new firebase.auth.RecaptchaVerifier('recaptcha-container-rec', { size: 'invisible' });
-        }
-        document.getElementById('rec-send-btn').textContent = 'Sending…';
-        _otpConfirmRec = await auth.signInWithPhoneNumber(_toE164(phone), _recaptchaRec);
-        document.getElementById('rec-otp-entry').style.display = 'block';
-        document.getElementById('rec-send-btn').textContent = 'Resend code';
-      } catch (e) {
-        console.log('Recovery OTP send failed:', e);
-        errEl.textContent = 'Could not send code. Check the number and try again.';
-        document.getElementById('rec-send-btn').textContent = 'Send code';
+      let profile = (await getFarms()).find(f => f.phone === phone);
+      if (!profile || !profile.secAHash) {
+        const cloud = await fetchCloudProfile(phone);
+        if (cloud && cloud.secAHash) profile = cloud;
       }
+      if (!profile) { errEl.textContent = 'No farm found for this number on this phone.'; return; }
+      if (!profile.secAHash) { errEl.textContent = 'This farm has no security question set. Restore from a backup file instead.'; return; }
+      _recoverProfile = profile;
+      document.getElementById('rec-question-label').textContent = profile.secQ || 'Security question';
+      document.getElementById('rec-question-entry').style.display = 'block';
     }
 
-    async function recoverVerifyOtp() {
+    async function recoverVerifyAnswer() {
       const errEl = document.getElementById('rec-err');
-      const code = document.getElementById('rec-otp').value.trim();
-      const phone = document.getElementById('rec-phone').value.trim();
-      if (!_otpConfirmRec) { errEl.textContent = 'Tap "Send code" first.'; return; }
-      if (code.length < 6) { errEl.textContent = 'Enter the 6-digit code.'; return; }
-      try {
-        await _otpConfirmRec.confirm(code);      // now signed in to Firebase as this phone
-        const profile = await fetchCloudProfile(phone);
-        if (!profile) { errEl.textContent = 'No saved farm found for this number.'; return; }
-        const farms = await getFarms();
-        const idx = farms.findIndex(f => f.phone === profile.phone);
-        if (idx >= 0) farms[idx] = profile; else farms.push(profile);
-        LS.set('farms', farms, false);
-        errEl.textContent = '';
-        loginAs(profile);                        // cloudLoad pulls all their data down
-      } catch (e) {
-        console.log('Recovery verify failed:', e);
-        errEl.textContent = 'Wrong/expired code, or no access. Try again.';
-      }
+      const ans = document.getElementById('rec-answer').value.trim();
+      if (!_recoverProfile) { errEl.textContent = 'Enter your phone number first.'; return; }
+      if (!ans) { errEl.textContent = 'Enter your answer.'; return; }
+      const ansHash = await hashPin(ans.toLowerCase());
+      if (ansHash !== _recoverProfile.secAHash) { errEl.textContent = 'Wrong answer. Try again.'; return; }
+      errEl.textContent = '';
+      document.getElementById('rec-question-entry').style.display = 'none';
+      document.getElementById('rec-newpin-entry').style.display = 'block';
     }
 
+    async function recoverSetNewPin() {
+      const errEl = document.getElementById('rec-err');
+      const np = document.getElementById('rec-new-pin').value.trim();
+      const np2 = document.getElementById('rec-new-pin2').value.trim();
+      if (!_recoverProfile) { errEl.textContent = 'Verify your answer first.'; return; }
+      if (!/^[0-9]{4}$/.test(np)) { errEl.textContent = 'New PIN must be exactly 4 digits.'; return; }
+      if (np !== np2) { errEl.textContent = 'PINs do not match.'; return; }
+      errEl.textContent = '';
+      const profile = _recoverProfile;
+      profile.pinHash = await hashPin(np);
+      const farms = await getFarms();
+      const idx = farms.findIndex(f => f.phone === profile.phone);
+      if (idx >= 0) farms[idx] = profile; else farms.push(profile);
+      LS.set('farms', farms, false);
+      _recoverProfile = null;
+      loginAs(profile);
+    }
     async function createFarm() {
       const name = document.getElementById('cf-name').value.trim();
       const tag = document.getElementById('cf-tag').value.trim() || 'My farm';
@@ -3552,17 +3576,20 @@
 
       if (!phone || phone.length < 9) { err.textContent = 'Invalid phone number.'; return; }
       if (pin.length < 4) { err.textContent = 'PIN must be 4 digits.'; return; }
-      if (!_phoneVerified) { err.textContent = 'Please verify your phone with the SMS code first.'; return; }
-      if (_toE164(phone) !== _verifiedPhone) { err.textContent = 'Verify the same number you typed above.'; return; }
+      const secQ = document.getElementById('cf-secq').value;
+      const secA = document.getElementById('cf-seca').value.trim();
+      if (!secA) { err.textContent = 'Enter an answer to your security question.'; return; }
 
       const farms = await getFarms();
       if (farms.find(f => f.phone === phone)) { err.textContent = 'Phone already registered.'; return; }
 
       const pinHash = await hashPin(pin);
-      const farm = { phone, pinHash, name, tagline: tag, logo: '🐔', color: '#1a6b1a', pprice, mainCust: cust, demo: false };
+      const secAHash = await hashPin(secA.toLowerCase());
+      const farm = { phone, pinHash, secQ, secAHash, name, tagline: tag, logo: '🐔', color: '#1a6b1a', pprice, mainCust: cust, demo: false };
       farms.push(farm);
       LS.set('farms', farms, false);
       cloudSyncFarm(farm); // cloud sync
+      loginAs(farm);
 
       // Save all setup batches
       loginAs(farm);
@@ -3950,7 +3977,13 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
 <button class="btn btn-sm btn-danger" onclick="deleteDebtor(${d._id})">${t('🗑 Delete')}</button></td></tr>`;
       });
       document.getElementById('debtor-table').innerHTML = rows; document.getElementById('debtors-zero').style.display = active.length ? 'none' : 'block';
-      const ae = document.getElementById('debtors-alerts'); if (ae) ae.innerHTML = overdue.length ? '<div class="alert al-red"><span class="alert-ico">🚨</span><div><strong>' + overdue.length + ' customer(s) overdue 14+ days.</strong> Consider stopping supply until they pay.</div></div>' : '';
+      const ae = document.getElementById('debtors-alerts');
+      if (ae) {
+        const _sw = getLang() === 'sw';
+        ae.innerHTML = overdue.length
+          ? '<div class="alert al-red"><span class="alert-ico">🚨</span><div><strong>' + overdue.length + (_sw ? ' mteja/wateja wamechelewa siku 14+.' : ' customer(s) overdue 14+ days.') + '</strong> ' + (_sw ? 'Fikiria kusimamisha usambazaji hadi walipe.' : 'Consider stopping supply until they pay.') + '</div></div>'
+          : '';
+      }
     }
     function deleteDebtor(id) {
       if (!confirm(t('Delete this debt record? This cannot be undone.'))) return;
@@ -4576,7 +4609,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         if (priceEl) priceEl.textContent = '—';
         if (marginEl) { marginEl.textContent = '—'; marginEl.className = 'val'; }
         if (statusEl) { statusEl.textContent = sw ? 'Inasubiri data' : 'Need data'; statusEl.className = 'tag ts'; }
-        if (pillVal) pillVal.textContent = sw ? 'Weka data' : 'Set up';
+        if (pillVal) pillVal.textContent = sw ? 'Hakuna data' : 'No data';
         if (pill) { pill.style.color = 'var(--text2)'; pill.style.borderColor = 'var(--border2)'; }
         if (noteEl) noteEl.innerHTML = sw
           ? 'Rekodi mayai uliyokusanya, chakula kilichotumika (kwenye Rekodi ya Leo), na mauzo mwezi huu ili kuona faida kwa kila yai.'
@@ -4691,13 +4724,16 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
     function switchTab(el, paneId) { const parent = el.parentElement; parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); el.classList.add('active'); el.closest('.page').querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active')); const pane = document.getElementById(paneId); if (pane) pane.classList.add('active'); }
+    function navTitleMap(lang) {
+      return lang === 'sw'
+        ? { today: 'Rekodi ya Leo', debtors: 'Wanaodaiwa', sales: 'Historia ya Mauzo', expenses: 'Matumizi', dashboard: 'Dashibodi na Ripoti', feeds: 'Hisa ya Chakula', flock: 'Kundi & Afya', vaccines: 'Chanjo', suppliers: 'Wasambazaji', settings: 'Mipangilio' }
+        : { today: 'Daily Record', debtors: 'Who Owes Me', sales: 'Sales History', expenses: 'Expenses', dashboard: 'Dashboard & Reports', feeds: 'Feed Stock', flock: 'Flock & Health', vaccines: 'Vaccination', suppliers: 'Suppliers', settings: 'Settings' };
+    }
     function goto(id, el) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active');
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if (el) el.classList.add('active');
       const sw = getLang() === 'sw';
-      const T = sw
-        ? { today: 'Rekodi ya Leo', sales: 'Historia ya Mauzo', debtors: 'Wanaodaiwa', expenses: 'Matumizi', dashboard: 'Dashibodi na Ripoti', feeds: 'Hisa ya Chakula', flock: 'Kundi & Afya', vaccines: 'Chanjo', suppliers: 'Wasambazaji', settings: 'Mipangilio' }
-        : { today: 'Daily Record', sales: 'Sales History', debtors: 'Who Owes Me', expenses: 'Expenses', dashboard: 'Dashboard & Reports', feeds: 'Feed Stock', flock: 'Flock & Health', vaccines: 'Vaccination', suppliers: 'Suppliers', settings: 'Settings' };
+      const T = navTitleMap(sw ? 'sw' : 'en');
       document.getElementById('page-title').textContent = T[id] || id;
       if (id === 'vaccines') renderVaccinePage();
       if (id === 'debtors') renderDebtorPage();
@@ -4778,7 +4814,13 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       try { localStorage.setItem('kuku3:lang', l); } catch (e) { }
       applyLangUI();
       applyTranslations();
-      if (appReady) { const dp = document.getElementById('dash-date-picker'); if (dp && dp.value) loadDateRecords(dp.value); }
+      if (appReady) {
+        ['sales', 'exp', 'feed', 'mort', 'sup'].forEach(p => {
+          const ms = document.getElementById(p + '-cal-month'), ys = document.getElementById(p + '-cal-year');
+          if (ms && ys) { const mv = ms.value, yv = ys.value; populateCalPickers(p + '-cal-month', p + '-cal-year'); ms.value = mv; ys.value = yv; }
+        });
+        const dp = document.getElementById('dash-date-picker'); if (dp && dp.value) loadDateRecords(dp.value);
+      }
       const activePage = document.querySelector('.page.active');
       if (activePage) {
         const pid = activePage.id.replace('page-', '');
@@ -4792,6 +4834,7 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         else if (pid === 'suppliers') renderSupplierLog();
         else if (pid === 'debtors') renderDebtorPage();
         else if (pid === 'vaccines') renderVaccinePage();
+        else if (pid === 'settings') { applySettingsInputs(); applyOpeningBalancesInputs(); }
       }
     }
 
@@ -4868,12 +4911,18 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         'Breed (optional)': 'Aina (si lazima)',
         '+ Add This Batch': '+ Ongeza Kundi Hili',
         '🐔 Create Farm & Sign In →': '🐔 Unda Shamba & Ingia →',
-        '✓ Review your farm details': '✓ Kagua maelezo ya shamba lako'
+        '✓ Review your farm details': '✓ Kagua maelezo ya shamba lako',
+        '🔑 Forgot your PIN? →': '🔑 Umesahau PIN yako? →',
+        'Security question (used to reset your PIN)': 'Swali la usalama (kurejesha PIN)',
+        'Your secret answer (remember this!)': 'Jibu lako la siri (likumbuke!)',
+        'Continue': 'Endelea',
+        'Verify answer': 'Thibitisha jibu',
+        'Save new PIN & sign in →': 'Hifadhi PIN mpya & ingia →'
       };
       document.querySelectorAll(
         '.login-sub, .login-switch, .login-hint, .login-btn, .login-field label'
       ).forEach(el => {
-        const orig = el.dataset.en || el.textContent.trim();
+        const orig = el.dataset.en || el.textContent.replace(/\s+/g, ' ').trim();
         el.dataset.en = orig;
         el.textContent = sw ? (loginMap[orig] || orig) : orig;
       });
@@ -4903,6 +4952,11 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       };
       // Select options
       const optionMap = {
+        "What is your mother's first name?": 'Jina la kwanza la mama yako ni nini?',
+        'What primary school did you attend?': 'Ulisoma shule gani ya msingi?',
+        'What is the name of your first customer?': 'Jina la mteja wako wa kwanza ni nani?',
+        'What town were you born in?': 'Ulizaliwa mji gani?',
+        'What is your favourite animal?': 'Mnyama unayempenda zaidi ni yupi?',
         // Feed types
         'Layers mash': 'Uji wa kuku wa kutaga',
         'Layers pellets': 'Vidonge vya kuku wa kutaga',
@@ -4976,6 +5030,16 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
 
       // ── All page card headings & labels ──
       const allText = {
+        'Supplier Reliability Scores': 'Alama za Uaminifu wa Wasambazaji',
+        'Rate a Supplier': 'Kadiria Msambazaji',
+        'Supplier name': 'Jina la msambazaji',
+        'Satisfaction rating': 'Kiwango cha kuridhika',
+        'Amount paid (KSh)': 'Kiasi kilicholipwa (KSh)',
+        'Notes': 'Maelezo',
+        'Save Rating': 'Hifadhi Ukadiriaji',
+        'Loose eggs collected': 'Mayai huru yaliyokusanywa',
+        '💾 Download full backup (.json)': '💾 Pakua nakala kamili (.json)',
+        '♻ Restore from backup': '♻ Rejesha kutoka nakala',
         // Daily record
         'Daily Record': 'Rekodi ya Leo',
         'Eggs Collected': 'Mayai Yaliyokusanywa',
@@ -5137,9 +5201,9 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         'h2, h3, label, .metric .lbl, .metric .sub, .btn, .tab, .lbl, ' +
         '.card-head h2, .sec-hd h2, .quick-entry-box h2, .quick-entry-box label, ' +
         '.quick-entry-box .btn, .rule-card-title, .rule-card p, ' +
-        '.brand-sub, .logout-btn, .cal-apply, .cal-picker label'
+        '.brand-sub, .cal-apply, .cal-picker label'
       ).forEach(el => {
-        const orig = el.dataset.en || el.textContent.trim();
+        const orig = el.dataset.en || el.textContent.replace(/\s+/g, ' ').trim();
         if (!orig) return;
         el.dataset.en = orig;
         if (sw) { if (allText[orig] != null) el.textContent = allText[orig]; }
@@ -5330,8 +5394,9 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         ['exp-total-label', sw ? 'Jumla mwezi huu' : 'Total this month'],
         ['profit-hist-note', sw ? 'Miezi iliyokamilika pekee.' : 'Completed months only. '],
         ['money-accounts-desc', sw ? 'Weka pesa ulizonazo sasa kwenye kila akaunti. Programu huongeza mauzo na kupunguza ununuzi moja kwa moja, na huzuia ununuzi pesa zisipotosha.' : "Enter the money you currently have in each account. The app adds your sales and subtracts your purchases automatically, and blocks a purchase when the money isn't there."],
-        ['setup-batch-intro', sw ? 'Ongeza makundi yako ya kuku — unaweza kuongeza mengi kadiri ulivyo nayo.' : 'Add your flock batches — you can add as many as you have.']
-        ['sup-rating-label', sw ? 'Gonga nyota kukadiria' : 'Tap stars to rate']
+        ['setup-batch-intro', sw ? 'Ongeza makundi yako ya kuku — unaweza kuongeza mengi kadiri ulivyo nayo.' : 'Add your flock batches — you can add as many as you have.'],
+        ['sup-rating-label', sw ? 'Gonga nyota kukadiria' : 'Tap stars to rate'],
+        ['recover-intro', sw ? '🔑 Umesahau PIN yako? Weka nambari ya simu na ujibu swali la usalama ili kuweka PIN mpya.' : '🔑 Forgot your PIN? Enter your phone number and answer your security question to set a new PIN.']
       ].forEach(([id, txt]) => { const el = document.getElementById(id); if (el) el.textContent = txt; });
       // ── Total: inline label ──
       const totalLabel = document.getElementById('sale-total-label');
