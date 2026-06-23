@@ -1923,9 +1923,18 @@
             <input type="text" id="cf-name" placeholder="e.g. Mutua Layers Farm" />
           </div>
           <div class="login-field">
-            <label>Location</label>
-            <input type="text" id="cf-tag" placeholder="e.g. Nakuru County" />
+            <label>County</label>
+            <input type="text" id="cf-county" placeholder="Start typing, e.g. Na…" list="county-list" autocomplete="off"
+              oninput="onCountyInput()" />
+            <datalist id="county-list"></datalist>
           </div>
+          <div class="login-field" id="cf-constituency-wrap" style="display:none">
+            <label>Constituency</label>
+            <select id="cf-constituency" onchange="updateLocationTag()">
+              <option value="">— Select constituency —</option>
+            </select>
+          </div>
+          <input type="hidden" id="cf-tag" />
           <div class="login-field">
             <label>Usual price per tray (KSh)</label>
             <input type="number" id="cf-pprice" placeholder="e.g. 430" inputmode="numeric" />
@@ -2420,6 +2429,7 @@
                 <table id="debtor-table">
                   <tr>
                     <th>Customer</th>
+                    <th>Phone</th>
                     <th>Date taken</th>
                     <th>Amount owed</th>
                     <th>Days</th>
@@ -3129,11 +3139,11 @@
         </div>
         <div class="form-group"><label>Customer name</label><input type="text" id="dm-name"
             placeholder="e.g. Baraka Shop" /></div>
-        <div class="form-group"><label>Customer phone (optional)</label><input type="tel" id="dm-phone"
-            placeholder="0712345678" /></div>
+        <div class="form-group"><label>Customer phone <span style="color:var(--red)">*required</span></label><input
+            type="tel" id="dm-phone" placeholder="0712345678" /></div>
         <div class="form-row">
           <div class="form-group"><label>Date collected</label><input type="date" id="dm-date" /></div>
-          <div class="form-group"><label>Trays taken</label><input type="number" id="dm-trays" value="10"
+          <div class="form-group"><label>Trays taken</label><input type="number" id="dbt-trays" value="10"
               inputmode="numeric" /></div>
         </div>
         <div class="form-row">
@@ -3156,7 +3166,7 @@
       <div class="modal-body">
         <div class="confirm-box">
           <div class="confirm-title" id="pay-cust-title">Customer</div>
-          <div class="confirm-row"><span>Currently owes</span><span id="pay-owed">KSh 0</span></div>
+          <div class="confirm-row"><span id="pay-owed-lbl">Currently owes</span><span id="pay-owed">KSh 0</span></div>
         </div>
         <div class="form-group"><label>Amount paid (KSh)</label>
           <input type="number" id="pay-amount" placeholder="0" inputmode="numeric" />
@@ -3249,6 +3259,83 @@
     const TODAY = new Date().toISOString().split('T')[0];
     const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const KENYA_COUNTIES = {
+      "Baringo": ["Tiaty", "Baringo North", "Baringo Central", "Baringo South", "Mogotio", "Eldama Ravine"],
+      "Bomet": ["Sotik", "Chepalungu", "Bomet East", "Bomet Central", "Konoin"],
+      "Bungoma": ["Mt Elgon", "Sirisia", "Kabuchai", "Bumula", "Kanduyi", "Webuye East", "Webuye West", "Kimilili", "Tongaren"],
+      "Busia": ["Teso North", "Teso South", "Nambale", "Matayos", "Butula", "Funyula", "Budalangi"],
+      "Elgeyo Marakwet": ["Marakwet East", "Marakwet West", "Keiyo North", "Keiyo South"],
+      "Embu": ["Manyatta", "Runyenjes", "Mbeere South", "Mbeere North"],
+      "Garissa": ["Garissa Township", "Balambala", "Lagdera", "Dadaab", "Fafi", "Ijara"],
+      "Homa Bay": ["Kasipul", "Kabondo Kasipul", "Karachuonyo", "Rangwe", "Homa Bay Town", "Ndhiwa", "Suba North", "Suba South"],
+      "Isiolo": ["Isiolo North", "Isiolo South"],
+      "Kajiado": ["Kajiado North", "Kajiado Central", "Kajiado East", "Kajiado West", "Kajiado South"],
+      "Kakamega": ["Lugari", "Likuyani", "Malava", "Lurambi", "Navakholo", "Mumias West", "Mumias East", "Matungu", "Butere", "Khwisero", "Shinyalu", "Ikolomani"],
+      "Kericho": ["Kipkelion East", "Kipkelion West", "Ainamoi", "Bureti", "Belgut", "Sigowet/Soin"],
+      "Kiambu": ["Gatundu South", "Gatundu North", "Juja", "Thika Town", "Ruiru", "Githunguri", "Kiambu", "Kiambaa", "Kabete", "Kikuyu", "Limuru", "Lari"],
+      "Kilifi": ["Kilifi North", "Kilifi South", "Kaloleni", "Rabai", "Ganze", "Malindi", "Magarini"],
+      "Kirinyaga": ["Mwea", "Gichugu", "Ndia", "Kirinyaga Central"],
+      "Kisii": ["Bonchari", "South Mugirango", "Bomachoge Borabu", "Bobasi", "Bomachoge Chache", "Nyaribari Masaba", "Nyaribari Chache", "Kitutu Chache North", "Kitutu Chache South"],
+      "Kisumu": ["Kisumu East", "Kisumu West", "Kisumu Central", "Seme", "Nyando", "Muhoroni", "Nyakach"],
+      "Kitui": ["Mwingi North", "Mwingi West", "Mwingi Central", "Kitui West", "Kitui Rural", "Kitui Central", "Kitui East", "Kitui South"],
+      "Kwale": ["Msambweni", "Lungalunga", "Matuga", "Kinango"],
+      "Laikipia": ["Laikipia West", "Laikipia East", "Laikipia North"],
+      "Lamu": ["Lamu East", "Lamu West"],
+      "Machakos": ["Masinga", "Yatta", "Kangundo", "Matungulu", "Kathiani", "Mavoko", "Machakos Town", "Mwala"],
+      "Makueni": ["Mbooni", "Kilome", "Kaiti", "Makueni", "Kibwezi West", "Kibwezi East"],
+      "Mandera": ["Mandera West", "Banissa", "Mandera North", "Mandera South", "Mandera East", "Lafey"],
+      "Marsabit": ["Moyale", "North Horr", "Saku", "Laisamis"],
+      "Meru": ["Igembe South", "Igembe Central", "Igembe North", "Tigania West", "Tigania East", "North Imenti", "Buuri", "Central Imenti", "South Imenti"],
+      "Migori": ["Rongo", "Awendo", "Suna East", "Suna West", "Uriri", "Nyatike", "Kuria West", "Kuria East"],
+      "Mombasa": ["Changamwe", "Jomvu", "Kisauni", "Nyali", "Likoni", "Mvita"],
+      "Murang'a": ["Kangema", "Mathioya", "Kiharu", "Kigumo", "Maragwa", "Kandara", "Gatanga"],
+      "Nairobi": ["Westlands", "Dagoretti North", "Dagoretti South", "Langata", "Kibra", "Roysambu", "Kasarani", "Ruaraka", "Embakasi South", "Embakasi North", "Embakasi Central", "Embakasi East", "Embakasi West", "Makadara", "Kamukunji", "Starehe", "Mathare"],
+      "Nakuru": ["Molo", "Njoro", "Naivasha", "Gilgil", "Kuresoi South", "Kuresoi North", "Subukia", "Rongai", "Bahati", "Nakuru Town West", "Nakuru Town East"],
+      "Nandi": ["Tinderet", "Aldai", "Nandi Hills", "Chesumei", "Emgwen", "Mosop"],
+      "Narok": ["Kilgoris", "Emurua Dikirr", "Narok North", "Narok East", "Narok South", "Narok West"],
+      "Nyamira": ["Kitutu Masaba", "West Mugirango", "North Mugirango", "Borabu"],
+      "Nyandarua": ["Kinangop", "Kipipiri", "Ol Kalou", "Ol Jorok", "Ndaragwa"],
+      "Nyeri": ["Tetu", "Kieni", "Mathira", "Othaya", "Mukurweini", "Nyeri Town"],
+      "Samburu": ["Samburu West", "Samburu North", "Samburu East"],
+      "Siaya": ["Ugenya", "Ugunja", "Alego Usonga", "Gem", "Bondo", "Rarieda"],
+      "Taita Taveta": ["Taveta", "Wundanyi", "Mwatate", "Voi"],
+      "Tana River": ["Garsen", "Galole", "Bura"],
+      "Tharaka Nithi": ["Maara", "Chuka/Igambang'ombe", "Tharaka"],
+      "Trans Nzoia": ["Kwanza", "Endebess", "Saboti", "Kiminini", "Cherangany"],
+      "Turkana": ["Turkana North", "Turkana West", "Turkana Central", "Loima", "Turkana South", "Turkana East"],
+      "Uasin Gishu": ["Soy", "Turbo", "Moiben", "Ainabkoi", "Kapseret", "Kesses"],
+      "Vihiga": ["Vihiga", "Sabatia", "Hamisi", "Luanda", "Emuhaya"],
+      "Wajir": ["Wajir North", "Wajir East", "Tarbaj", "Wajir West", "Eldas", "Wajir South"],
+      "West Pokot": ["Kapenguria", "Sigor", "Kacheliba", "Pokot South"]
+    };
+
+    function populateCountyDatalist() {
+      const dl = document.getElementById('county-list');
+      if (!dl) return;
+      dl.innerHTML = Object.keys(KENYA_COUNTIES).map(c => '<option value="' + c + '"></option>').join('');
+    }
+    function onCountyInput() {
+      const typed = document.getElementById('cf-county').value.trim();
+      const wrap = document.getElementById('cf-constituency-wrap');
+      const sel = document.getElementById('cf-constituency');
+      const match = Object.keys(KENYA_COUNTIES).find(c => c.toLowerCase() === typed.toLowerCase());
+      if (match) {
+        sel.innerHTML = '<option value="">— Select constituency —</option>' +
+          KENYA_COUNTIES[match].map(con => '<option value="' + con + '">' + con + '</option>').join('');
+        wrap.style.display = 'block';
+      } else {
+        wrap.style.display = 'none';
+        sel.innerHTML = '<option value="">— Select constituency —</option>';
+      }
+      updateLocationTag();
+    }
+    function updateLocationTag() {
+      const county = document.getElementById('cf-county').value.trim();
+      const constituency = document.getElementById('cf-constituency').value;
+      const tag = constituency ? (constituency + ', ' + county) : county;
+      const tagEl = document.getElementById('cf-tag');
+      if (tagEl) tagEl.value = tag;
+    }
     const BANK_COLORS = { 'Cash': '#1a6b1a', 'M-Pesa': '#005f2f', 'Equity Bank': '#1557a0', 'KCB Bank': '#c0392b', 'Co-operative Bank': '#6b21a8', 'Absa Bank': '#c2410c', 'NCBA Bank': '#b86b00', 'Family Bank': '#0f766e' };
     let currentFarm = null, _syncT = null, appReady = false;
 
@@ -3338,7 +3425,7 @@
       if (f) { errEl.textContent = ''; loginAs(f); }
       else errEl.textContent = 'Wrong phone/PIN. On a new phone? Tap "Restore your farm". Demo: 0700000000 / 1234';
     }
-    function showCreateView() { document.getElementById('signin-view').style.display = 'none'; document.getElementById('create-view').style.display = 'block'; setupStep = 1; showStep(1); }
+    function showCreateView() { document.getElementById('signin-view').style.display = 'none'; document.getElementById('create-view').style.display = 'block'; setupStep = 1; showStep(1); populateCountyDatalist(); }
     function showSigninView() { document.getElementById('create-view').style.display = 'none'; document.getElementById('signin-view').style.display = 'block'; }
     let setupStep = 1;
     let setupBatches = [];
@@ -3924,19 +4011,27 @@
     // DEBTORS
     // ════════════════════════════════════════
     function addDebtorFromSale(sale, due) { LS.pushArr('debtors', { _id: sale._id, cust: sale.cust, phone: '', date: sale.date, trays: sale.trays, price: sale.price, amount: sale.totalAmount, owed: sale.totalAmount, due: due, status: 'pending', rating: 5, addedFrom: 'sale' }); renderDebtorPage(); updateSidebarStats(); }
-    function openAddDebtorModal() { document.getElementById('dm-date').value = TODAY; document.getElementById('dm-due').value = addDays(TODAY, 14); openModal('debtor-modal'); }
+    function openAddDebtorModal() {
+      const dEl = document.getElementById('dm-date'), dueEl = document.getElementById('dm-due');
+      dEl.value = TODAY;
+      dEl.max = TODAY;                 // old debts can't be collected in the future
+      dueEl.value = addDays(TODAY, 14);
+      openModal('debtor-modal');
+    }
     function addDebtor() {
       const name = document.getElementById('dm-name').value.trim();
       const phone = document.getElementById('dm-phone').value.trim();
       const date = document.getElementById('dm-date').value;
-      const trays = +document.getElementById('dm-trays').value || 0;
+      const trays = +document.getElementById('dbt-trays').value || 0;
       const price = +document.getElementById('dm-price').value || 0;
       const due = document.getElementById('dm-due').value;
 
       if (!name) { alert('Enter customer name.'); return; }
+      if (!phone || phone.replace(/\D/g, '').length < 9) { alert(getLang() === 'sw' ? 'Weka nambari ya simu ya mteja — inahitajika kutuma ukumbusho wa WhatsApp.' : 'Enter the customer phone number — it is needed to send WhatsApp reminders.'); return; }
       if (!trays) { alert('Enter number of trays.'); return; }
       if (!price) { alert('Enter price per tray.'); return; }
       if (!date) { alert('Pick a date.'); return; }
+      if (date > TODAY) { alert(getLang() === 'sw' ? 'Tarehe ya deni la zamani lazima iwe ya leo au kabla.' : 'Old debt date must be today or earlier.'); return; }
 
       const newDebtor = {
         _id: getNextId(),
@@ -3961,7 +4056,7 @@
       // Reset form
       document.getElementById('dm-name').value = '';
       document.getElementById('dm-phone').value = '';
-      document.getElementById('dm-trays').value = '10';
+      document.getElementById('dbt-trays').value = '10';
       document.getElementById('dm-price').value = '430';
     }
     function renderDebtorPage() {
@@ -3970,10 +4065,10 @@
       const badge = document.getElementById('debt-badge'); if (badge) { badge.textContent = active.length; badge.style.display = active.length ? '' : 'none'; }
       const starsHtml = n => '★'.repeat(n) + '☆'.repeat(5 - n), stC = n => n >= 4 ? 'hi' : n >= 3 ? '' : ' lo';
       const sm = { pending: '<span class="tag ta">' + t('Pending') + '</span>', overdue: '<span class="tag tr">' + t('Overdue') + '</span>', paid: '<span class="tag tg">' + t('Paid') + '</span>' };
-      let rows = '<tr><th>' + (getLang() === 'sw' ? 'Mteja' : 'Customer') + '</th><th>' + (getLang() === 'sw' ? 'Tarehe iliyochukuliwa' : 'Date taken') + '</th><th>' + (getLang() === 'sw' ? 'Kiasi kinachohitajika' : 'Amount owed') + '</th><th>' + (getLang() === 'sw' ? 'Siku' : 'Days') + '</th><th>' + (getLang() === 'sw' ? 'Ukadiriaji' : 'Rating') + '</th><th>' + (getLang() === 'sw' ? 'Hali' : 'Status') + '</th><th>' + (getLang() === 'sw' ? 'Kitendo' : 'Action') + '</th></tr>';
+      let rows = '<tr><th>' + (getLang() === 'sw' ? 'Mteja' : 'Customer') + '</th><th>' + (getLang() === 'sw' ? 'Simu' : 'Phone') + '</th><th>' + (getLang() === 'sw' ? 'Tarehe iliyochukuliwa' : 'Date taken') + '</th><th>' + (getLang() === 'sw' ? 'Kiasi kinachohitajika' : 'Amount owed') + '</th><th>' + (getLang() === 'sw' ? 'Siku' : 'Days') + '</th><th>' + (getLang() === 'sw' ? 'Ukadiriaji' : 'Rating') + '</th><th>' + (getLang() === 'sw' ? 'Hali' : 'Status') + '</th><th>' + (getLang() === 'sw' ? 'Kitendo' : 'Action') + '</th></tr>';
       [...debtors].sort((a, b) => (b.owed || 0) - (a.owed || 0)).forEach(d => {
-        const days = daysBetween(d.date, TODAY), st = d.owed <= 0 ? 'paid' : (days > 14 ? 'overdue' : 'pending'), r = d.rating || 5; rows += '<tr><td><strong>' + escH(d.cust) + '</strong>' + (d.phone ? '<div style="font-size:11px;color:var(--text3)">' + escH(d.phone) + '</div>' : '') + `</td><td>${shortDate(d.date)}</td><td style="font-weight:700;color:${d.owed > 0 ? (days > 14 ? 'var(--red)' : 'var(--amber)') : 'var(--green)'}">KSh ${(d.owed || 0).toLocaleString()}</td><td style="color:${days > 14 ? 'var(--red)' : days > 7 ? 'var(--amber)' : 'var(--text2)'};">${days}d</td><td><span class="stars${stC(r)}">${starsHtml(r)}</span></td><td>${sm[st]}</td><td style="display:flex;gap:4px">${d.owed > 0 ? '<button class="btn btn-sm btn-primary" onclick="openPaymentModal(' + d._id + ')">' + t('Record Payment') + '</button>' : ''}
-${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust) + '\',' + d.owed + ',' + days + ',\'' + escH(d.phone) + '\')">' + t('SMS') + '</button>' : ''}
+        const days = daysBetween(d.date, TODAY), st = d.owed <= 0 ? 'paid' : (days > 14 ? 'overdue' : 'pending'), r = d.rating || 5; rows += '<tr><td><strong>' + escH(d.cust) + '</strong></td><td>' + escH(d.phone || '—') + `</td><td>${shortDate(d.date)}</td><td style="font-weight:700;color:${d.owed > 0 ? (days > 14 ? 'var(--red)' : 'var(--amber)') : 'var(--green)'}">KSh ${(d.owed || 0).toLocaleString()}</td><td style="color:${days > 14 ? 'var(--red)' : days > 7 ? 'var(--amber)' : 'var(--text2)'};">${days}d</td><td><span class="stars${stC(r)}">${starsHtml(r)}</span></td><td>${sm[st]}</td><td style="display:flex;gap:4px">${d.owed > 0 ? '<button class="btn btn-sm btn-primary" onclick="openPaymentModal(' + d._id + ')">' + t('Record Payment') + '</button>' : ''}
+${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + escJs(d.cust) + '\',' + d.owed + ',' + days + ',\'' + escJs(d.phone) + '\')">📲 WhatsApp</button>' : ''}
 <button class="btn btn-sm btn-danger" onclick="deleteDebtor(${d._id})">${t('🗑 Delete')}</button></td></tr>`;
       });
       document.getElementById('debtor-table').innerHTML = rows; document.getElementById('debtors-zero').style.display = active.length ? 'none' : 'block';
@@ -3993,7 +4088,10 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
       updateSidebarStats();
     }
     let payTargetId = null;
-    function openPaymentModal(id) { payTargetId = id; const d = LS.getArr('debtors').find(x => x._id === id); if (!d) return; document.getElementById('pay-cust-title').textContent = d.cust; document.getElementById('pay-owed').textContent = 'KSh ' + (d.owed || 0).toLocaleString(); document.getElementById('pay-amount').value = ''; document.getElementById('pay-date').value = TODAY; openModal('payment-modal'); }
+    function openPaymentModal(id) {
+      payTargetId = id; const d = LS.getArr('debtors').find(x => x._id === id); if (!d) return; document.getElementById('pay-cust-title').textContent = d.cust; document.getElementById('pay-owed').textContent = 'KSh ' + (d.owed || 0).toLocaleString(); document.getElementById('pay-owed-lbl').textContent = getLang() === 'sw' ? 'Anadaiwa sasa' : 'Currently owes';
+      document.getElementById('pay-amount').value = ''; document.getElementById('pay-date').value = TODAY; openModal('payment-modal');
+    }
     function payFull() { const d = LS.getArr('debtors').find(x => x._id === payTargetId); if (d) document.getElementById('pay-amount').value = d.owed || 0; }
     function savePayment() {
       const paid = +document.getElementById('pay-amount').value || 0, ch = document.getElementById('pay-channel').value, date = document.getElementById('pay-date').value;
@@ -4013,6 +4111,17 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         ? 'Mpendwa ' + cust + ',\n\nKumbusho: unadaiwa KSh ' + Number(amt).toLocaleString() + ' kwa mayai uliyochukua siku ' + days + ' zilizopita.\n\nTafadhali lipa ili uendelee kupokea mayai.\n\nAsante.'
         : 'Dear ' + cust + ',\n\nReminder: you owe KSh ' + Number(amt).toLocaleString() + ' for eggs collected ' + days + ' days ago.\n\nPlease pay to continue receiving supply.\n\nThank you.';
       openModal('sms-modal');
+    }
+    function debtorWhatsApp(cust, owed, days, phone) {
+      const sw = getLang() === 'sw';
+      if (!phone) { alert(sw ? 'Hakuna nambari ya simu kwa mteja huyu.' : 'No phone number saved for this customer.'); return; }
+      const c = String(phone).replace(/\D/g, '');
+      const intl = c.startsWith('0') ? '254' + c.slice(1) : (c.startsWith('254') ? c : '254' + c);
+      const farm = currentFarm ? currentFarm.name : 'Kuku Farm';
+      const msg = sw
+        ? 'Habari ' + cust + ',\n\nKumbukumbu kutoka ' + farm + '. Unadaiwa KSh ' + Number(owed).toLocaleString() + ' kwa mayai uliyochukua siku ' + days + ' zilizopita.\n\nTafadhali lipa ili uendelee kupokea mayai. Asante.'
+        : 'Hello ' + cust + ',\n\nA friendly reminder from ' + farm + '. You owe KSh ' + Number(owed).toLocaleString() + ' for eggs collected ' + days + ' days ago.\n\nKindly clear it so we can keep supplying you. Thank you.';
+      window.open('https://wa.me/' + intl + '?text=' + encodeURIComponent(msg), '_blank');
     }
     function sendSMS() { const p = document.getElementById('sms-phone').value.trim(); if (!p) { alert('Enter phone number'); return; } const c = p.replace(/\D/g, ''), i = c.startsWith('0') ? '254' + c.slice(1) : c; window.open('sms:+' + i + '?body=' + encodeURIComponent(document.getElementById('sms-text').value), '_blank'); closeModal('sms-modal'); }
 
@@ -4698,8 +4807,17 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
     function exportTablePDF(tableId, title) {
       const t = document.getElementById(tableId); if (!t || t.rows.length < 1) { alert('No data to export yet.'); return; }
       const farm = currentFarm ? currentFarm.name : 'Kuku Farm', today = new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
-      const headCells = [...t.rows[0].cells].map(c => c.textContent.trim()), drop = headCells.map((h, i) => /(^$)/i.test(h) ? i : -1).filter(i => i >= 0);
-      const rowArr = r => [...r.cells].map(c => c.textContent.replace(/\s+/g, ' ').trim()).filter((_, i) => drop.indexOf(i) < 0);
+      // Convert a cell to clean, PDF-safe text
+      const cellText = c => {
+        let s = c.textContent.replace(/\s+/g, ' ').trim();
+        const filled = (s.match(/★/g) || []).length;       // rating cell → "n/5"
+        if (filled && /^[★☆\s]+$/.test(s)) return filled + '/5';
+        return s.replace(/[^\x20-\x7E]/g, '').replace(/\s+/g, ' ').trim(); // strip emoji/symbols
+      };
+      // Drop empty columns AND the "Action"/"Kitendo" column (buttons don't belong in a PDF)
+      const headCells = [...t.rows[0].cells].map(c => c.textContent.trim());
+      const drop = headCells.map((h, i) => (h === '' || /^action$|^kitendo$/i.test(h)) ? i : -1).filter(i => i >= 0);
+      const rowArr = r => [...r.cells].map(cellText).filter((_, i) => drop.indexOf(i) < 0);
       const head = [rowArr(t.rows[0])], body = [...t.rows].slice(1).map(rowArr).filter(row => row.some(c => c));
       const fileName = (farm + '-' + title).replace(/[^\w-]+/g, '_') + '.pdf';
       if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable) { try { const { jsPDF } = window.jspdf, doc = new jsPDF(); doc.setFontSize(16); doc.setTextColor(26, 107, 26); doc.text(farm, 14, 18); doc.setFontSize(10); doc.setTextColor(110); doc.text(title + ' — ' + today, 14, 25); doc.autoTable({ head, body, startY: 30, styles: { fontSize: 9, cellPadding: 3 }, headStyles: { fillColor: [26, 107, 26], textColor: 255 } }); doc.save(fileName); return; } catch (e) { } }
@@ -5184,6 +5302,17 @@ ${d.phone ? '<button class="btn btn-sm" onclick="openSMSModal(\'' + escH(d.cust)
         'Stop supply to anyone owing over KSh 15,000 or 14+ days overdue.': 'Acha usambazaji kwa yeyote anayedaiwa zaidi ya KSh 15,000 au amechelewa siku 14+.',
         'Rule 3 — Pay yourself': 'Kanuni 3 — Jilipe Mwenyewe',
         'Move 20–30% of weekly net profit to a separate savings account.': 'Hamisha 20–30% ya faida ya kila wiki kwenye akaunti tofauti ya akiba.',
+        'Customer phone *required': 'Simu ya mteja *inahitajika',
+        'Date collected': 'Tarehe iliyochukuliwa',
+        'Trays taken': 'Trei zilizochukuliwa',
+        'Bei kwa tray (KSh)': 'Bei kwa tray (KSh)',
+        'Expected payment date': 'Tarehe inayotarajiwa ya malipo',
+        'Customer phone (optional)': 'Simu ya mteja (si lazima)',
+        'Currently owes': 'Anadaiwa sasa',
+        'Amount paid (KSh)': 'Kiasi kilicholipwa (KSh)',
+        'Pay full amount': 'Lipa kiasi chote',
+        'Paid via': 'Kulipwa kupitia',
+        'Date paid': 'Tarehe iliyolipwa',
 
         // Alert messages
         'Pay Later sales appear here automatically. Tap Record Payment to clear fully or partially.': 'Mauzo ya "Lipa Baadaye" yanaonekana hapa moja kwa moja. Bonyeza Rekodi Malipo kufuta kabisa au sehemu.',
