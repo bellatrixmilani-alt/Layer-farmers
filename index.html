@@ -3755,7 +3755,7 @@
 
       const pinHash = await hashPin(pin);
       const secAHash = await hashPin(secA.toLowerCase());
-      const farm = { phone, pinHash, secQ, secAHash, name, tagline: tag, logo: '🐔', color: '#1a6b1a', pprice, mainCust: cust, demo: false };
+      const farm = { phone, pinHash, secQ, secAHash, name, tagline: tag, logo: '🐔', color: '#1a6b1a', pprice, mainCust: cust, demo: false, createdAt: TODAY };
       farms.push(farm);
       LS.set('farms', farms, false);
       cloudSyncFarm(farm); // cloud sync
@@ -3947,6 +3947,12 @@
       if (!cust) { showMsgBanner('s-msg', 'Enter customer name.', 'err'); return; }
       if (!trays && !loose) { showMsgBanner('s-msg', 'Enter trays or loose eggs.', 'err'); return; }
       if (!price) { showMsgBanner('s-msg', 'Enter price per tray.', 'err'); return; }
+      if (pay === 'credit' && (!custPhone || custPhone.replace(/\D/g, '').length < 9)) {
+        showMsgBanner('s-msg', getLang() === 'sw'
+          ? 'Weka nambari ya simu ya mteja — inahitajika kutuma ukumbusho wa WhatsApp.'
+          : 'Enter the customer phone number — it is needed to send WhatsApp reminders.', 'err');
+        return;
+      }
       const _sw = getLang() === 'sw';
       const _drec = (LS.get('dailyRecords') || {})[date];
       if (!_drec) { showMsgBanner('s-msg', _sw ? 'Rekodi mayai yaliyokusanywa siku hii kwanza kabla ya kuuza.' : "Record this day's egg collection first before recording a sale.", 'err'); return; }
@@ -4100,8 +4106,9 @@
     function addDebtorFromSale(sale, due, phone) { LS.pushArr('debtors', { _id: sale._id, cust: sale.cust, phone: phone || '', date: sale.date, trays: sale.trays, price: sale.price, amount: sale.totalAmount, owed: sale.totalAmount, due: due, status: 'pending', rating: 5, addedFrom: 'sale' }); renderDebtorPage(); updateSidebarStats(); }
     function openAddDebtorModal() {
       const dEl = document.getElementById('dm-date'), dueEl = document.getElementById('dm-due');
-      dEl.value = TODAY;
-      dEl.max = TODAY;                 // old debts can't be collected in the future
+      const start = (currentFarm && currentFarm.createdAt) ? currentFarm.createdAt : TODAY;
+      dEl.value = addDays(start, -1);
+      dEl.max = addDays(start, -1);
       dueEl.value = addDays(TODAY, 14);
       openModal('debtor-modal');
     }
@@ -4118,8 +4125,8 @@
       if (!trays) { alert('Enter number of trays.'); return; }
       if (!price) { alert('Enter price per tray.'); return; }
       if (!date) { alert('Pick a date.'); return; }
-      if (date > TODAY) { alert(getLang() === 'sw' ? 'Tarehe ya deni la zamani lazima iwe ya leo au kabla.' : 'Old debt date must be today or earlier.'); return; }
-
+      const start = (currentFarm && currentFarm.createdAt) ? currentFarm.createdAt : TODAY;
+      if (date >= start) { alert(getLang() === 'sw' ? 'Tarehe ya deni la zamani lazima iwe kabla ya kuanza kutumia programu.' : 'Old debt date must be before you started using the app.'); return; }
       const newDebtor = {
         _id: getNextId(),
         cust: name,
