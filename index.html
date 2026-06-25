@@ -1789,14 +1789,63 @@
       }
     }
 
+    // Pure-JS SHA-256 fallback (used when crypto.subtle is unavailable,
+    // e.g. http:// over a LAN IP on a phone). Produces identical hashes
+    // to crypto.subtle for ASCII input, so PINs match across devices.
+    function _sha256(ascii) {
+      function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
+      var maxWord = Math.pow(2, 32), result = '', words = [];
+      var asciiBitLength = ascii.length * 8;
+      var hash = _sha256.h = _sha256.h || [], k = _sha256.k = _sha256.k || [];
+      var primeCounter = k.length, isComposite = {};
+      for (var candidate = 2; primeCounter < 64; candidate++) {
+        if (!isComposite[candidate]) {
+          for (var i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+          hash[primeCounter] = (Math.pow(candidate, .5) * maxWord) | 0;
+          k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+        }
+      }
+      ascii += '\x80';
+      while (ascii.length % 64 - 56) ascii += '\x00';
+      for (i = 0; i < ascii.length; i++) {
+        var j = ascii.charCodeAt(i);
+        if (j >> 8) return null;
+        words[i >> 2] |= j << ((3 - i) % 4) * 8;
+      }
+      words[words.length] = (asciiBitLength / maxWord) | 0;
+      words[words.length] = asciiBitLength;
+      for (var jj = 0; jj < words.length;) {
+        var w = words.slice(jj, jj += 16), oldHash = hash;
+        hash = hash.slice(0, 8);
+        for (i = 0; i < 64; i++) {
+          var w15 = w[i - 15], w2 = w[i - 2], a = hash[0], e = hash[4];
+          var t1 = hash[7] + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) +
+            ((e & hash[5]) ^ ((~e) & hash[6])) + k[i] +
+            (w[i] = (i < 16) ? w[i] : (
+              w[i - 16] + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) +
+              w[i - 7] + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))
+            ) | 0);
+          var t2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) +
+            ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+          hash = [(t1 + t2) | 0].concat(hash);
+          hash[4] = (hash[4] + t1) | 0;
+        }
+        for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+      }
+      for (i = 0; i < 8; i++)
+        for (j = 3; j + 1; j--) {
+          var b = (hash[i] >> (j * 8)) & 255;
+          result += ((b < 16) ? 0 : '') + b.toString(16);
+        }
+      return result;
+    }
     async function hashPin(pin) {
-      const buf = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(pin + 'kuku-salt-v1')
-      );
-      return Array.from(new Uint8Array(buf))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+      const data = pin + 'kuku-salt-v1';
+      if (window.crypto && crypto.subtle) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      return _sha256(data);
     }
     async function fetchCloudProfile(phone) {
       return null; // Local-first: cloud disabled
@@ -1922,11 +1971,13 @@
             <label>Farm name</label>
             <input type="text" id="cf-name" placeholder="e.g. Mutua Layers Farm" />
           </div>
-          <div class="login-field">
+          <div class="login-field" style="position:relative">
             <label>County</label>
-            <input type="text" id="cf-county" placeholder="Start typing, e.g. Na…" list="county-list" autocomplete="off"
-              oninput="onCountyInput()" />
-            <datalist id="county-list"></datalist>
+            <input type="text" id="cf-county" placeholder="Start typing, e.g. Nai…" autocomplete="off"
+              oninput="onCountyInput()" onfocus="onCountyInput()" />
+            <div id="county-suggest"
+              style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1.5px solid var(--border2);border-top:none;border-radius:0 0 var(--r) var(--r);max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,80,0,.15)">
+            </div>
           </div>
           <div class="login-field" id="cf-constituency-wrap" style="display:none">
             <label>Constituency</label>
@@ -2271,7 +2322,10 @@
               </select>
             </div>
             <div class="bank-select-wrap" id="credit-due-wrap">
-              <label style="font-size:11px;color:var(--amber);margin-bottom:4px">Expected payment date</label>
+              <label style="font-size:11px;color:var(--amber);margin-bottom:4px">Customer phone (for WhatsApp
+                reminders)</label>
+              <input type="tel" id="s-cust-phone" placeholder="0712345678" inputmode="numeric" />
+              <label style="font-size:11px;color:var(--amber);margin:8px 0 4px">Expected payment date</label>
               <input type="date" id="s-due" />
               <div style="font-size:11px;color:var(--amber);margin-top:3px">This will create a debtor record
                 automatically.</div>
@@ -2999,6 +3053,7 @@
                     <th>Amount Paid</th>
                     <th>Rating</th>
                     <th>Notes</th>
+                  </tr>
                 </table>
               </div>
               <div id="sup-log-zero" class="zero-state">
@@ -3310,23 +3365,51 @@
     };
 
     function populateCountyDatalist() {
-      const dl = document.getElementById('county-list');
-      if (!dl) return;
-      dl.innerHTML = Object.keys(KENYA_COUNTIES).map(c => '<option value="' + c + '"></option>').join('');
+      // No longer uses a native datalist — suggestions are built live in onCountyInput().
     }
-    function onCountyInput() {
-      const typed = document.getElementById('cf-county').value.trim();
+    function renderConstituencies(countyName) {
       const wrap = document.getElementById('cf-constituency-wrap');
       const sel = document.getElementById('cf-constituency');
-      const match = Object.keys(KENYA_COUNTIES).find(c => c.toLowerCase() === typed.toLowerCase());
-      if (match) {
+      if (KENYA_COUNTIES[countyName]) {
         sel.innerHTML = '<option value="">— Select constituency —</option>' +
-          KENYA_COUNTIES[match].map(con => '<option value="' + con + '">' + con + '</option>').join('');
+          KENYA_COUNTIES[countyName].map(con => '<option value="' + con + '">' + con + '</option>').join('');
         wrap.style.display = 'block';
       } else {
         wrap.style.display = 'none';
         sel.innerHTML = '<option value="">— Select constituency —</option>';
       }
+    }
+    function pickCounty(name) {
+      document.getElementById('cf-county').value = name;
+      document.getElementById('county-suggest').style.display = 'none';
+      renderConstituencies(name);
+      updateLocationTag();
+    }
+    function onCountyInput() {
+      const typed = document.getElementById('cf-county').value.trim().toLowerCase();
+      const box = document.getElementById('county-suggest');
+      const names = Object.keys(KENYA_COUNTIES);
+      // Match counties that CONTAIN the typed text; show all when the field is empty.
+      const matches = typed
+        ? names.filter(c => c.toLowerCase().includes(typed))
+        : names;
+      // Put names that START with the typed text first, then the rest.
+      matches.sort((a, b) => {
+        const as = a.toLowerCase().startsWith(typed) ? 0 : 1;
+        const bs = b.toLowerCase().startsWith(typed) ? 0 : 1;
+        return as - bs || a.localeCompare(b);
+      });
+      // Exact match → load constituencies straight away.
+      const exact = names.find(c => c.toLowerCase() === typed);
+      renderConstituencies(exact || '');
+      if (!matches.length) { box.style.display = 'none'; updateLocationTag(); return; }
+      box.innerHTML = matches.map(c =>
+        '<div onmousedown="pickCounty(\'' + escJs(c) + '\')" ontouchstart="pickCounty(\'' + escJs(c) + '\')" ' +
+        'style="padding:11px 14px;cursor:pointer;font-size:15px;border-bottom:1px solid var(--border)" ' +
+        'onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'#fff\'">' +
+        escH(c) + '</div>'
+      ).join('');
+      box.style.display = 'block';
       updateLocationTag();
     }
     function updateLocationTag() {
@@ -3676,11 +3759,9 @@
       farms.push(farm);
       LS.set('farms', farms, false);
       cloudSyncFarm(farm); // cloud sync
-      loginAs(farm);
 
-      // Save all setup batches
-      loginAs(farm);
-      setupBatches.forEach((b, i) => {
+      // Save all setup batches BEFORE logging in
+      setupBatches.forEach((b) => {
         LS.pushArr('flockBatches', {
           id: getNextId(),
           name: b.name,
@@ -3689,6 +3770,12 @@
           breed: b.breed || ''
         });
       });
+
+      // Reset setup state BEFORE logging in
+      setupBatches = [];
+
+      // NOW log in — initApp will find the batches already saved
+      loginAs(farm);
 
       // Reset setup state
       setupBatches = [];
@@ -3856,7 +3943,7 @@
     }
     function updateSalePreview() { const t = +document.getElementById('s-trays').value || 0, l = +document.getElementById('s-loose').value || 0, p = +document.getElementById('s-price').value || 0, total = t * p + Math.round(l / 30 * p); document.getElementById('sale-total-preview').textContent = 'KSh ' + total.toLocaleString(); }
     function addSale() {
-      const date = document.getElementById('s-date').value, cust = document.getElementById('s-cust').value.trim(), trays = +document.getElementById('s-trays').value || 0, loose = +document.getElementById('s-loose').value || 0, price = +document.getElementById('s-price').value || 0, pay = document.getElementById('s-pay').value, bankName = document.getElementById('s-bank').value, due = document.getElementById('s-due').value;
+      const date = document.getElementById('s-date').value, cust = document.getElementById('s-cust').value.trim(), trays = +document.getElementById('s-trays').value || 0, loose = +document.getElementById('s-loose').value || 0, price = +document.getElementById('s-price').value || 0, pay = document.getElementById('s-pay').value, bankName = document.getElementById('s-bank').value, due = document.getElementById('s-due').value, custPhone = document.getElementById('s-cust-phone').value.trim();
       if (!cust) { showMsgBanner('s-msg', 'Enter customer name.', 'err'); return; }
       if (!trays && !loose) { showMsgBanner('s-msg', 'Enter trays or loose eggs.', 'err'); return; }
       if (!price) { showMsgBanner('s-msg', 'Enter price per tray.', 'err'); return; }
@@ -3876,12 +3963,12 @@
       const total = trays * price + Math.round(loose / 30 * price);
       const sale = { _id: getNextId(), date, cust, trays, loose, price, pay, bankName: pay === 'bank' ? bankName : '', totalAmount: total, status: pay === 'credit' ? 'pending' : 'received' };
       LS.pushArr('sales', sale);
-      if (pay === 'credit') addDebtorFromSale(sale, due || addDays(date, 14));
+      if (pay === 'credit') addDebtorFromSale(sale, due || addDays(date, 14), custPhone);
       rebuildCustomerDatalist(); renderSalesPage(); renderDashboard(); updateSidebarStats(); loadDateRecords(date);
       showMsgBanner('s-msg', '✓ Sale saved — ' + trays + ' trays to ' + cust + ' · KSh ' + total.toLocaleString() + (pay === 'credit' ? ' (added to Debtors)' : ''), 'ok');
       clearSaleForm();
     }
-    function clearSaleForm() { document.getElementById('s-cust').value = ''; document.getElementById('s-trays').value = '10'; document.getElementById('s-loose').value = '0'; selectPay('cash'); updateSalePreview(); }
+    function clearSaleForm() { document.getElementById('s-cust').value = ''; document.getElementById('s-cust-phone').value = ''; document.getElementById('s-trays').value = '10'; document.getElementById('s-loose').value = '0'; selectPay('cash'); updateSalePreview(); }
     function deleteSale(id) {
       if (!confirm(getLang() === 'sw' ? 'Futa mauzo haya? Haiwezi kutenduliwa.' : 'Delete this sale? This cannot be undone.')) return;
       LS.set('sales', LS.getArr('sales').filter(s => s._id !== id));
@@ -4010,7 +4097,7 @@
     // ════════════════════════════════════════
     // DEBTORS
     // ════════════════════════════════════════
-    function addDebtorFromSale(sale, due) { LS.pushArr('debtors', { _id: sale._id, cust: sale.cust, phone: '', date: sale.date, trays: sale.trays, price: sale.price, amount: sale.totalAmount, owed: sale.totalAmount, due: due, status: 'pending', rating: 5, addedFrom: 'sale' }); renderDebtorPage(); updateSidebarStats(); }
+    function addDebtorFromSale(sale, due, phone) { LS.pushArr('debtors', { _id: sale._id, cust: sale.cust, phone: phone || '', date: sale.date, trays: sale.trays, price: sale.price, amount: sale.totalAmount, owed: sale.totalAmount, due: due, status: 'pending', rating: 5, addedFrom: 'sale' }); renderDebtorPage(); updateSidebarStats(); }
     function openAddDebtorModal() {
       const dEl = document.getElementById('dm-date'), dueEl = document.getElementById('dm-due');
       dEl.value = TODAY;
@@ -4120,8 +4207,7 @@ ${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + esc
       const farm = currentFarm ? currentFarm.name : 'Kuku Farm';
       const msg = sw
         ? 'Habari ' + cust + ',\n\nKumbukumbu kutoka ' + farm + '. Unadaiwa KSh ' + Number(owed).toLocaleString() + ' kwa mayai uliyochukua siku ' + days + ' zilizopita.\n\nTafadhali lipa ili uendelee kupokea mayai. Asante.'
-        : 'Hello ' + cust + ',\n\nA friendly reminder from ' + farm + '. You owe KSh ' + Number(owed).toLocaleString() + ' for eggs collected ' + days + ' days ago.\n\nKindly clear it so we can keep supplying you. Thank you.';
-      window.open('https://wa.me/' + intl + '?text=' + encodeURIComponent(msg), '_blank');
+        : 'Hello ' + cust + '. Hope business is good! A small reminder about the eggs you took — the balance of KSh ' + Number(owed).toLocaleString() + ' is still pending (about ' + days + ' days now). Kindly clear it so we can keep supplying you. Thank you.'; window.open('https://wa.me/' + intl + '?text=' + encodeURIComponent(msg), '_blank');
     }
     function sendSMS() { const p = document.getElementById('sms-phone').value.trim(); if (!p) { alert('Enter phone number'); return; } const c = p.replace(/\D/g, ''), i = c.startsWith('0') ? '254' + c.slice(1) : c; window.open('sms:+' + i + '?body=' + encodeURIComponent(document.getElementById('sms-text').value), '_blank'); closeModal('sms-modal'); }
 
@@ -4619,62 +4705,6 @@ ${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + esc
     // ════════════════════════════════════════
     // SIDEBAR STATS
     // ════════════════════════════════════════
-    function renderBreakEven() {
-      if (!document.getElementById('break-even-card')) return;
-      const ym = TODAY.slice(0, 7), recs = LS.get('dailyRecords') || {};
-      let eggs = 0, bags = 0;
-      Object.keys(recs).forEach(d => { if (d.slice(0, 7) === ym) { eggs += (recs[d].trays * 30) + (recs[d].loose || 0); bags += (recs[d].feedUsed || 0); } });
-      const feeds = LS.getArr('feeds');
-      const price = feeds.length ? ([...feeds].sort((a, b) => b.date.localeCompare(a.date))[0].price || 0) : 0;
-      const other = LS.getArr('expenses').filter(e => e.date && e.date.slice(0, 7) === ym).reduce((s, e) => s + (e.amount || 0), 0);
-      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || 0; };
-      set('be-feedprice', price); set('be-bags', bags); set('be-other', other); set('be-eggs', eggs);
-      calcBreakEven();
-    }
-
-    function calcBreakEven() {
-      const sw = getLang() === 'sw', g = id => +((document.getElementById(id) || {}).value) || 0, T = id => document.getElementById(id);
-      if (T('be-title')) T('be-title').textContent = sw ? '⚖️ Kikokotoo cha kuvunja sare' : '⚖️ Break-even calculator';
-      if (T('be-intro')) T('be-intro').textContent = sw ? 'Bei ya chini kabisa ya yai inayolipia gharama zako. Badilisha bei ya chakula kuona jinsi chakula kinavyokula faida.' : 'The lowest egg price that still covers your costs. Change the feed price to see how rising feed eats your profit.';
-      if (T('be-feedprice-lbl')) T('be-feedprice-lbl').textContent = sw ? 'Bei ya chakula kwa mfuko (KSh)' : 'Feed price per bag (KSh)';
-      if (T('be-bags-lbl')) T('be-bags-lbl').textContent = sw ? 'Mifuko iliyotumika mwezi huu' : 'Bags used this month';
-      if (T('be-other-lbl')) T('be-other-lbl').textContent = sw ? 'Gharama nyingine mwezi huu (KSh)' : 'Other costs this month (KSh)';
-      if (T('be-eggs-lbl')) T('be-eggs-lbl').textContent = sw ? 'Mayai yaliyozalishwa mwezi huu' : 'Eggs produced this month';
-      if (T('be-egg-lbl')) T('be-egg-lbl').textContent = sw ? 'Kuvunja sare kwa yai' : 'Break-even per egg';
-      if (T('be-tray-lbl')) T('be-tray-lbl').textContent = sw ? 'Kuvunja sare kwa trei' : 'Break-even per tray';
-      if (T('be-current-lbl')) T('be-current-lbl').textContent = sw ? 'Unauza yai kwa' : 'You sell each egg for';
-      if (T('be-reset')) T('be-reset').textContent = sw ? '↺ Rudisha namba zangu halisi' : '↺ Reset to my real numbers';
-
-      const feedPrice = g('be-feedprice'), bags = g('be-bags'), other = g('be-other'), eggs = g('be-eggs');
-      const feedCost = feedPrice * bags, totalCost = feedCost + other;
-      const beEgg = eggs > 0 ? totalCost / eggs : 0, beTray = beEgg * 30;
-      const ym = TODAY.slice(0, 7), sales = LS.getArr('sales').filter(s => s.date && s.date.slice(0, 7) === ym);
-      let rev = 0, sold = 0; sales.forEach(s => { rev += s.totalAmount || 0; sold += (s.trays * 30) + (s.loose || 0); });
-      const curEgg = sold > 0 ? rev / sold : 0;
-      const feedPct = totalCost > 0 ? Math.round(feedCost / totalCost * 100) : 0;
-
-      const eggEl = T('be-egg'), trayEl = T('be-tray'), curEl = T('be-current'), statusEl = T('be-status'), vEl = T('be-verdict');
-      if (eggEl) eggEl.textContent = beEgg > 0 ? 'KSh ' + beEgg.toFixed(2) : '—';
-      if (trayEl) trayEl.textContent = beEgg > 0 ? 'KSh ' + beTray.toFixed(0) : '—';
-      if (curEl) curEl.textContent = curEgg > 0 ? 'KSh ' + curEgg.toFixed(2) : '—';
-
-      if (!eggs || !totalCost) {
-        if (statusEl) { statusEl.textContent = sw ? 'Weka namba' : 'Enter numbers'; statusEl.className = 'tag ts'; }
-        if (vEl) { vEl.className = 'alert al-blue'; vEl.style.display = 'flex'; vEl.innerHTML = '<span class="alert-ico">ℹ</span><div>' + (sw ? 'Jaza gharama na mayai ili kuona bei ya chini kabisa.' : 'Fill in your costs and eggs to see your minimum safe price.') + '</div>'; }
-        return;
-      }
-      const margin = curEgg - beEgg;
-      if (!curEgg) {
-        if (statusEl) { statusEl.textContent = sw ? 'Hakuna mauzo' : 'No sales'; statusEl.className = 'tag ta'; }
-        if (vEl) { vEl.className = 'alert al-amber'; vEl.style.display = 'flex'; vEl.innerHTML = '<span class="alert-ico">⚠</span><div>' + (sw ? 'Lazima uuze kila yai juu ya <strong>KSh ' + beEgg.toFixed(2) + '</strong> (trei juu ya <strong>KSh ' + beTray.toFixed(0) + '</strong>) ili kuvunja sare. Chakula ni ' + feedPct + '% ya gharama.' : 'You must sell each egg above <strong>KSh ' + beEgg.toFixed(2) + '</strong> (a tray above <strong>KSh ' + beTray.toFixed(0) + '</strong>) to break even. Feed is ' + feedPct + '% of your cost.') + '</div>'; }
-      } else if (margin >= 0) {
-        if (statusEl) { statusEl.textContent = sw ? 'Salama ✓' : 'Safe ✓'; statusEl.className = 'tag tg'; }
-        if (vEl) { vEl.className = 'alert al-green'; vEl.style.display = 'flex'; vEl.innerHTML = '<span class="alert-ico">✓</span><div>' + (sw ? 'Salama. Unauza kwa <strong>KSh ' + curEgg.toFixed(2) + '</strong>, kuvunja sare ni <strong>KSh ' + beEgg.toFixed(2) + '</strong> — nafasi ya <strong>KSh ' + margin.toFixed(2) + '</strong> kwa yai. Chakula ni ' + feedPct + '% ya gharama.' : 'Safe. You sell at <strong>KSh ' + curEgg.toFixed(2) + '</strong>, break-even is <strong>KSh ' + beEgg.toFixed(2) + '</strong> — a cushion of <strong>KSh ' + margin.toFixed(2) + '</strong> per egg. Feed is ' + feedPct + '% of your cost.') + '</div>'; }
-      } else {
-        if (statusEl) { statusEl.textContent = sw ? 'Hatari ⚠' : 'Danger ⚠'; statusEl.className = 'tag tr'; }
-        if (vEl) { vEl.className = 'alert al-red'; vEl.style.display = 'flex'; vEl.innerHTML = '<span class="alert-ico">🚨</span><div>' + (sw ? 'Hatari. Unauza kwa <strong>KSh ' + curEgg.toFixed(2) + '</strong> lakini unahitaji <strong>KSh ' + beEgg.toFixed(2) + '</strong> — unapoteza <strong>KSh ' + Math.abs(margin).toFixed(2) + '</strong> kwa kila yai. Pandisha bei au punguza chakula.' : 'Danger. You sell at <strong>KSh ' + curEgg.toFixed(2) + '</strong> but need <strong>KSh ' + beEgg.toFixed(2) + '</strong> to break even — you lose <strong>KSh ' + Math.abs(margin).toFixed(2) + '</strong> per egg. Raise your price or cut feed cost.') + '</div>'; }
-      }
-    }
 
     function renderMoneyPerEgg() {
       const sw = getLang() === 'sw', ym = TODAY.slice(0, 7), T = id => document.getElementById(id);
@@ -4837,7 +4867,7 @@ ${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + esc
     function stepVal(id, d) { const el = document.getElementById(id); if (!el) return; el.value = Math.max(0, (+el.value || 0) + d); updateSalePreview(); }
     function escH(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     function escAttr(s) { return String(s || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
-    function escJs(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+    function escJs(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
     function showMsgBanner(id, msg, ty) { const el = document.getElementById(id); if (!el) return; if (!msg) { el.className = 'msg-banner'; el.textContent = ''; return; } const out = getLang() === 'sw' ? (DICT[msg] || msg) : msg; el.textContent = (ty === 'ok' ? '✓ ' : '⚠ ') + out; el.className = 'msg-banner ' + ty; setTimeout(() => { el.className = 'msg-banner'; el.textContent = ''; }, 7000); }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
@@ -4855,7 +4885,7 @@ ${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + esc
       document.getElementById('page-title').textContent = T[id] || id;
       if (id === 'vaccines') renderVaccinePage();
       if (id === 'debtors') renderDebtorPage();
-      if (id === 'dashboard') { renderDashboard(); renderBreakEven(); }
+      if (id === 'dashboard') { renderDashboard(); }
       if (id === 'flock') { renderFlockMetrics(); populateMortFlockDropdown(); }
       if (id === 'suppliers') { renderSupplierScores(); renderSupplierLog(); }
       if (id === 'settings') { applySettingsInputs(); applyOpeningBalancesInputs(); }
@@ -4869,16 +4899,7 @@ ${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + esc
     // ════════════════════════════════════════
     // LANGUAGE
     // ════════════════════════════════════════
-    const SW = {
-      'Record late': 'Rekodi kuchelewa',
-      'Mark given': 'Weka alama imetolewa',
-      'Recorded ✓': 'Imerekodiwa ✓',
-    };
 
-    function t(str) {
-      if (getLang() !== 'sw') return str;
-      return SW[str] || str;
-    }
     function getLang() { try { return localStorage.getItem('kuku3:lang') || 'en'; } catch (e) { return 'en'; } }
 
     // Central dictionary for all JS-generated text
