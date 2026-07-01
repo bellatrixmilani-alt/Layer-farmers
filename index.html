@@ -2322,13 +2322,13 @@
               </select>
             </div>
             <div class="bank-select-wrap" id="credit-due-wrap">
-              <label style="font-size:11px;color:var(--amber);margin-bottom:4px">Customer phone (for WhatsApp
-                reminders)</label>
+              <label id="lbl-credit-phone" style="font-size:11px;color:var(--amber);margin-bottom:4px">Customer phone
+                <span style="color:var(--red)">*required for WhatsApp reminders</span></label>
               <input type="tel" id="s-cust-phone" placeholder="0712345678" inputmode="numeric" />
               <label style="font-size:11px;color:var(--amber);margin:8px 0 4px">Expected payment date</label>
               <input type="date" id="s-due" />
-              <div style="font-size:11px;color:var(--amber);margin-top:3px">This will create a debtor record
-                automatically.</div>
+              <div id="lbl-credit-note" style="font-size:11px;color:var(--amber);margin-top:3px">This will create a
+                debtor record automatically.</div>
             </div>
             <div style="font-size:13px;color:var(--text3);margin-bottom:12px">
               <span id="sale-total-label">Total: </span><strong id="sale-total-preview"
@@ -3810,6 +3810,19 @@
     function pillLabel(iso) { const d = new Date(iso + 'T00:00:00'); return getLang() === 'sw' ? WEEKDAYS_SHORT_SW[d.getDay()] + ' ' + d.getDate() + ' ' + SW_MONTHS[d.getMonth()] : WEEKDAYS_SHORT_EN[d.getDay()] + ' ' + d.getDate() + ' ' + d.toLocaleDateString('en-KE', { month: 'short' }); }
     function formatDate(iso) { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); if (getLang() === 'sw') return SW_DAYS[d.getDay()] + ', ' + d.getDate() + ' ' + SW_MONTHS[d.getMonth()] + ' ' + d.getFullYear(); return d.toLocaleDateString('en-KE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
     function shortDate(iso) { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); if (getLang() === 'sw') return d.getDate() + ' ' + SW_MONTHS_SHORT[d.getMonth()]; return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short' }); }
+    function mediumDate(iso) { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); return d.getDate() + ' ' + monthName(d.getMonth()) + ' ' + d.getFullYear(); }
+    function getTimeGreeting() {
+      const sw = getLang() === 'sw';
+      const hour = new Date().getHours();
+      if (sw) {
+        if (hour < 12) return 'Habari za asubuhi';
+        if (hour < 17) return 'Habari za mchana';
+        return 'Habari za jioni';
+      }
+      if (hour < 12) return 'Good morning';
+      if (hour < 17) return 'Good afternoon';
+      return 'Good evening';
+    }
     function monthName(i) { return getLang() === 'sw' ? SW_MONTHS[i] : MONTHS[i]; }
     function addDays(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0]; }
     function isoMonday(iso) { const d = new Date(iso + 'T00:00:00'), day = d.getDay(); d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)); return d.toISOString().split('T')[0]; }
@@ -4106,9 +4119,8 @@
     function addDebtorFromSale(sale, due, phone) { LS.pushArr('debtors', { _id: sale._id, cust: sale.cust, phone: phone || '', date: sale.date, trays: sale.trays, price: sale.price, amount: sale.totalAmount, owed: sale.totalAmount, due: due, status: 'pending', rating: 5, addedFrom: 'sale' }); renderDebtorPage(); updateSidebarStats(); }
     function openAddDebtorModal() {
       const dEl = document.getElementById('dm-date'), dueEl = document.getElementById('dm-due');
-      const start = (currentFarm && currentFarm.createdAt) ? currentFarm.createdAt : TODAY;
-      dEl.value = addDays(start, -1);
-      dEl.max = addDays(start, -1);
+      dEl.value = TODAY;
+      dEl.max = TODAY;
       dueEl.value = addDays(TODAY, 14);
       openModal('debtor-modal');
     }
@@ -4125,8 +4137,7 @@
       if (!trays) { alert('Enter number of trays.'); return; }
       if (!price) { alert('Enter price per tray.'); return; }
       if (!date) { alert('Pick a date.'); return; }
-      const start = (currentFarm && currentFarm.createdAt) ? currentFarm.createdAt : TODAY;
-      if (date >= start) { alert(getLang() === 'sw' ? 'Tarehe ya deni la zamani lazima iwe kabla ya kuanza kutumia programu.' : 'Old debt date must be before you started using the app.'); return; }
+      if (date > TODAY) { alert(getLang() === 'sw' ? 'Tarehe haiwezi kuwa ya baadaye.' : 'Date cannot be in the future.'); return; }
       const newDebtor = {
         _id: getNextId(),
         cust: name,
@@ -4162,8 +4173,8 @@
       let rows = '<tr><th>' + (getLang() === 'sw' ? 'Mteja' : 'Customer') + '</th><th>' + (getLang() === 'sw' ? 'Simu' : 'Phone') + '</th><th>' + (getLang() === 'sw' ? 'Tarehe iliyochukuliwa' : 'Date taken') + '</th><th>' + (getLang() === 'sw' ? 'Kiasi kinachohitajika' : 'Amount owed') + '</th><th>' + (getLang() === 'sw' ? 'Siku' : 'Days') + '</th><th>' + (getLang() === 'sw' ? 'Ukadiriaji' : 'Rating') + '</th><th>' + (getLang() === 'sw' ? 'Hali' : 'Status') + '</th><th>' + (getLang() === 'sw' ? 'Kitendo' : 'Action') + '</th></tr>';
       [...debtors].sort((a, b) => (b.owed || 0) - (a.owed || 0)).forEach(d => {
         const days = daysBetween(d.date, TODAY), st = d.owed <= 0 ? 'paid' : (days > 14 ? 'overdue' : 'pending'), r = d.rating || 5; rows += '<tr><td><strong>' + escH(d.cust) + '</strong></td><td>' + escH(d.phone || '—') + `</td><td>${shortDate(d.date)}</td><td style="font-weight:700;color:${d.owed > 0 ? (days > 14 ? 'var(--red)' : 'var(--amber)') : 'var(--green)'}">KSh ${(d.owed || 0).toLocaleString()}</td><td style="color:${days > 14 ? 'var(--red)' : days > 7 ? 'var(--amber)' : 'var(--text2)'};">${days}d</td><td><span class="stars${stC(r)}">${starsHtml(r)}</span></td><td>${sm[st]}</td><td style="display:flex;gap:4px">${d.owed > 0 ? '<button class="btn btn-sm btn-primary" onclick="openPaymentModal(' + d._id + ')">' + t('Record Payment') + '</button>' : ''}
-${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + escJs(d.cust) + '\',' + d.owed + ',' + days + ',\'' + escJs(d.phone) + '\')">📲 WhatsApp</button>' : ''}
-<button class="btn btn-sm btn-danger" onclick="deleteDebtor(${d._id})">${t('🗑 Delete')}</button></td></tr>`;
+${d.phone ? '<button class="btn btn-sm btn-wa" onclick="sendDebtorStatement(' + d._id + ')">📲 WhatsApp</button>' : ''}
+          <button class="btn btn-sm btn-danger" onclick="deleteDebtor(${d._id})">${t('🗑 Delete')}</button></td></tr>`;
       });
       document.getElementById('debtor-table').innerHTML = rows; document.getElementById('debtors-zero').style.display = active.length ? 'none' : 'block';
       const ae = document.getElementById('debtors-alerts');
@@ -4206,15 +4217,43 @@ ${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + esc
         : 'Dear ' + cust + ',\n\nReminder: you owe KSh ' + Number(amt).toLocaleString() + ' for eggs collected ' + days + ' days ago.\n\nPlease pay to continue receiving supply.\n\nThank you.';
       openModal('sms-modal');
     }
-    function debtorWhatsApp(cust, owed, days, phone) {
+    function sendDebtorStatement(id) {
       const sw = getLang() === 'sw';
-      if (!phone) { alert(sw ? 'Hakuna nambari ya simu kwa mteja huyu.' : 'No phone number saved for this customer.'); return; }
-      const c = String(phone).replace(/\D/g, '');
+      const all = LS.getArr('debtors');
+      const clicked = all.find(d => d._id === id);
+      if (!clicked) return;
+      if (!clicked.phone) { alert(sw ? 'Hakuna nambari ya simu kwa mteja huyu.' : 'No phone number saved for this customer.'); return; }
+
+      const others = all
+        .filter(d => d._id !== id && d.cust === clicked.cust && d.phone === clicked.phone && d.owed > 0)
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      const total = (clicked.owed || 0) + others.reduce((s, d) => s + (d.owed || 0), 0);
+
+      const c = String(clicked.phone).replace(/\D/g, '');
       const intl = c.startsWith('0') ? '254' + c.slice(1) : (c.startsWith('254') ? c : '254' + c);
-      const farm = currentFarm ? currentFarm.name : 'Kuku Farm';
+
+      const greeting = getTimeGreeting();
+
+      const clickedLine = mediumDate(clicked.date) + ' — ' + (clicked.trays || 0) +
+        (sw ? ' trei' : ' trays') + ' = KSh ' + (clicked.owed || 0).toLocaleString();
+
+      const otherLines = others.map(d =>
+        '  • ' + mediumDate(d.date) + ' — ' + (d.trays || 0) + (sw ? ' trei' : ' trays') +
+        ' = KSh ' + (d.owed || 0).toLocaleString()
+      ).join('\n');
+
       const msg = sw
-        ? 'Habari ' + cust + ',\n\nKumbukumbu kutoka ' + farm + '. Unadaiwa KSh ' + Number(owed).toLocaleString() + ' kwa mayai uliyochukua siku ' + days + ' zilizopita.\n\nTafadhali lipa ili uendelee kupokea mayai. Asante.'
-        : 'Hello ' + cust + '. Hope business is good! A small reminder about the eggs you took — the balance of KSh ' + Number(owed).toLocaleString() + ' is still pending (about ' + days + ' days now). Kindly clear it so we can keep supplying you. Thank you.'; window.open('https://wa.me/' + intl + '?text=' + encodeURIComponent(msg), '_blank');
+        ? greeting + '! Hapa kuna masasisho:\n' + clickedLine +
+        (others.length ? '\nUnayo pia madeni ya nyuma yanayosubiri:\n' + otherLines : '') +
+        '\nJumla inayodaiwa: KSh ' + total.toLocaleString() +
+        '\nTafadhali lipa ili tuendelee kukuhudumia. Asante.'
+        : greeting + '! Hope business is good. Here are the updates:\n' + clickedLine +
+        (others.length ? '\nYou also have earlier balances pending:\n' + otherLines : '') +
+        '\nTotal owed: KSh ' + total.toLocaleString() +
+        '\nKindly clear this so we can keep supplying you. Thank you.';
+
+      window.open('https://wa.me/' + intl + '?text=' + encodeURIComponent(msg), '_blank');
     }
     function sendSMS() { const p = document.getElementById('sms-phone').value.trim(); if (!p) { alert('Enter phone number'); return; } const c = p.replace(/\D/g, ''), i = c.startsWith('0') ? '254' + c.slice(1) : c; window.open('sms:+' + i + '?body=' + encodeURIComponent(document.getElementById('sms-text').value), '_blank'); closeModal('sms-modal'); }
 
@@ -5553,7 +5592,9 @@ ${d.phone ? '<button class="btn btn-sm btn-wa" onclick="debtorWhatsApp(\'' + esc
         ['money-accounts-desc', sw ? 'Weka pesa ulizonazo sasa kwenye kila akaunti. Programu huongeza mauzo na kupunguza ununuzi moja kwa moja, na huzuia ununuzi pesa zisipotosha.' : "Enter the money you currently have in each account. The app adds your sales and subtracts your purchases automatically, and blocks a purchase when the money isn't there."],
         ['setup-batch-intro', sw ? 'Ongeza makundi yako ya kuku — unaweza kuongeza mengi kadiri ulivyo nayo.' : 'Add your flock batches — you can add as many as you have.'],
         ['sup-rating-label', sw ? 'Gonga nyota kukadiria' : 'Tap stars to rate'],
-        ['recover-intro', sw ? '🔑 Umesahau PIN yako? Weka nambari ya simu na ujibu swali la usalama ili kuweka PIN mpya.' : '🔑 Forgot your PIN? Enter your phone number and answer your security question to set a new PIN.']
+        ['recover-intro', sw ? '🔑 Umesahau PIN yako? Weka nambari ya simu na ujibu swali la usalama ili kuweka PIN mpya.' : '🔑 Forgot your PIN? Enter your phone number and answer your security question to set a new PIN.'],
+        ['lbl-credit-phone', sw ? 'Simu ya mteja *inahitajika kwa ukumbusho wa WhatsApp' : 'Customer phone *required for WhatsApp reminders'],
+        ['lbl-credit-note', sw ? 'Hii itaunda rekodi ya mdeni moja kwa moja.' : 'This will create a debtor record automatically.']
       ].forEach(([id, txt]) => { const el = document.getElementById(id); if (el) el.textContent = txt; });
       // ── Total: inline label ──
       const totalLabel = document.getElementById('sale-total-label');
